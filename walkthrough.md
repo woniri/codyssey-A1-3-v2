@@ -16,12 +16,13 @@ d:/Temp/0.코디세이/new-travel/
 ├── js/
 │   └── app.js                   # 프론트엔드 비즈니스 로직 (CORS API 통신, Web Speech TTS, 반응형 뷰포트 분기)
 ├── api/
-│   └── generate.py              # Vercel Python Serverless Function (Gemini LLM 호출 및 이미지 연동)
-├── requirements.txt             # Python 의존 라이브러리 목록 (google-generativeai, requests)
+│   └── index.py                 # Vercel Python Serverless Function 진입점 (FastAPI 백엔드 설계)
+├── requirements.txt             # Python 의존 라이브러리 목록 (google-generativeai, requests, fastapi, uvicorn)
 ├── vercel.json                  # Vercel 빌드 및 라우팅 설정 파일
 ├── travel_ebook_platform_plan.md  # 최종 기획서
 ├── study_guide.md               # 초등학생 눈높이 학습용 교육 문서
 └── walkthrough.md               # [현재 파일] 개발 완성 검증 및 배포 안내서
+
 ```
 
 ---
@@ -42,7 +43,7 @@ d:/Temp/0.코디세이/new-travel/
 * **모바일 (768px 이하)**: 펼침 뷰어가 공간적 한계를 가지므로, `display: none`과 `active-page` 클래스를 제어하는 **단일 카드 슬라이드 뷰**로 자동 전환 및 마감 처리했습니다.
 
 ### ③ 백엔드 Gemini API & Unsplash 이미지 연동
-* 파이썬 API `api/generate.py`에서는 사용자가 고른 관심사, 기간, 목소리 스타일을 매개변수화해 Gemini API에 JSON 구조로 응답하도록 요령껏 프롬프팅(`Structured JSON Output`)합니다.
+* 파이썬 API `api/index.py`에서는 사용자가 고른 관심사, 기간, 목소리 스타일을 매개변수화해 Gemini API에 JSON 구조로 응답하도록 요령껏 프롬프팅(`Structured JSON Output`)합니다.
 * 책의 표지와 각 페이지 챕터 내용에 맞는 감성 풍경 사진을 가져오기 위해 Unsplash API 조회 모듈을 탑재했으며, API Key가 누락되었을 시 깨지지 않도록 방어 코드(무료 풍경 이미지 주소로 리다이렉션)가 장착되어 있습니다.
 
 ### ④ 서버 비용 0원의 오디오 내레이션
