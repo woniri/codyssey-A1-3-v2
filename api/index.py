@@ -5,11 +5,12 @@ from typing import List, Optional
 import os
 import json
 import requests
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 app = FastAPI()
 
-# CORS 설정 (로컬 개발 및 Vercel 다중 도메인 유연성 확보)
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,27 +19,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# API 입력 파라미터 구조체 정의
 class TravelRequest(BaseModel):
     destination: str
     style: Optional[str] = "cherry"
     duration: Optional[str] = "당일치기"
     themes: Optional[List[str]] = []
 
-# Gemini API 설정
+# API Key 정보 로드
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-
-# Unsplash API 설정
 UNSPLASH_ACCESS_KEY = os.environ.get("UNSPLASH_ACCESS_KEY", "")
 
-# 헬스체크용 GET 엔드포인트 (Vercel이 루트 경로의 index.html을 삼키지 않도록 @app.get("/") 삭제)
+def get_gemini_client():
+    """
+    GEMINI_API_KEY 환경 변수를 확인하고 신형 GenAI Client 객체를 안전하게 인스턴스화합니다.
+    """
+    if not GEMINI_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="Vercel Settings 환경 변수에 'GEMINI_API_KEY'가 설정되지 않았습니다. API 키를 등록하고 Redeploy 해주세요."
+        )
+    try:
+        return genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"GenAI Client 초기화 실패: {str(e)}"
+        )
+
+# 헬스체크용 GET 엔드포인트
 @app.get("/api/generate")
 async def health_check():
-    return {"status": "healthy", "service": "AI Travel e-Book API"}
+    return {
+        "status": "healthy", 
+        "service": "AI Travel e-Book API",
+        "api_key_configured": bool(GEMINI_API_KEY)
+    }
 
-# 메인 콘텐츠 생성 POST 엔드포인트 (Vercel이 루트 경로를 삼키지 않도록 @app.post("/") 삭제)
+# 메인 콘텐츠 생성 POST 엔드포인트
 @app.post("/api/generate")
 async def generate_travel_book(req: TravelRequest):
     destination = req.destination.strip()
@@ -49,11 +66,8 @@ async def generate_travel_book(req: TravelRequest):
     if not destination:
         raise HTTPException(status_code=400, detail="여행지(destination)를 입력해 주세요.")
 
-    if not GEMINI_API_KEY:
-        raise HTTPException(
-            status_code=500, 
-            detail="서버에 Gemini API Key가 설정되지 않았습니다. Vercel 환경 변수를 확인해주세요."
-        )
+    # 신형 클라이언트 인스턴스 확보
+    client = get_gemini_client()
 
     # 1. Gemini 프롬프트 조립
     theme_str = ", ".join(themes) if themes else "일반 역사 및 문화"
@@ -90,7 +104,7 @@ async def generate_travel_book(req: TravelRequest):
 [JSON Output Schema]
 {{
   "title": "책의 메인 제목 (예: '천년의 고도, 경주 불국사를 걷다')",
-  "subtitle": "감성적인 소제목 (예: '신라의 불교 예술และ 석조에 담긴 천년의 이야기')",
+  "subtitle": "감성적인 소제목 (예: '신라의 불교 예술과 석조에 담긴 천년의 이야기')",
   "splitType": "SINGLE 또는 SERIES 중 적절한 것 선택",
   "pages": [
     {{
@@ -117,20 +131,20 @@ async def generate_travel_book(req: TravelRequest):
 """
 
     try:
-        # 2. Gemini API 호출
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "response_mime_type": "application/json",
-                "temperature": 0.7
-            }
+        # 2. 신형 google-genai API 호출 (gemini-2.5-flash 초고속 최신 모델 채택)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.7
+            )
         )
 
         # 3. JSON 데이터 파싱
         result_data = json.loads(response.text.strip())
 
-        # 4. Unsplash 이미지 연동 및 보완
+        # 4. Unsplash 이미지 연동
         for page in result_data.get("pages", []):
             query = page.get("imagePrompt", destination)
             image_url = get_unsplash_image(query)
