@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI 여행 가이드북 및 페이퍼 아트 전자책 생성기. 나만의 동반자와 함께 전 세계 문화를 탐험해 보세요.">
+  <title>AI 감성 여행 책방 - 당신의 여행 동반자</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- 뒷배경 이미지 블러 처리용 (글래스모피즘용) -->
+  <div class="bg-blur-container" id="bgBlur"></div>
+
+  <!-- 헤더 영역 -->
+  <header>
+    <div class="logo" id="btnHome">
+      <span>📖</span> AI 여행 책방
+    </div>
+  </header>
+
+  <!-- 메인 본문 콘텐츠 -->
+  <main>
+    
+    <!-- 1. 생성 입력 폼 카드 -->
+    <section class="creation-card" id="creationCard">
+      <h2>나만의 AI 가이드북 만들기</h2>
+      <p class="subtitle">떠나고 싶은 도시나 명소를 입력하시면 감성적인 전자책과 일정을 구성해 드립니다.</p>
+      
+      <form id="creationForm" onsubmit="return false;">
+        <!-- 여행지 입력 -->
+        <div class="form-group">
+          <label for="destination">어디로 떠나시나요? (필수)</label>
+          <input type="text" id="destination" class="input-text" placeholder="예: 경주 불국사, 도쿄, 파리 에펠탑" required autocomplete="off">
+        </div>
+
+        <!-- 아코디언 설정 버튼 -->
+        <button type="button" class="accordion-toggle" id="btnToggleOptions">
+          ⚙️ 세부 옵션 맞춤 설정 <span id="accordionIcon">▼</span>
+        </button>
+
+        <!-- 아코디언 상세 설정 내부 -->
+        <div class="accordion-content" id="optionsAccordion">
+          <div class="options-grid">
+            
+            <!-- 가이드 스타일 선택 -->
+            <div class="form-group">
+              <label>가이드 목소리 & 이야기 스타일</label>
+              <div class="radio-group">
+                <label>
+                  <input type="radio" name="style" value="cherry" checked>
+                  <span class="option-btn">🍒 체리의 다정한 가이드</span>
+                </label>
+                <label>
+                  <input type="radio" name="style" value="expert">
+                  <span class="option-btn">🎓 정중한 해설사 가이드</span>
+                </label>
+                <label>
+                  <input type="radio" name="style" value="kids">
+                  <span class="option-btn">👶 아이들을 위한 동화책</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 여행 일정 설정 -->
+            <div class="form-group">
+              <label>추천 일정 기간</label>
+              <div class="radio-group">
+                <label>
+                  <input type="radio" name="duration" value="당일치기" checked>
+                  <span class="option-btn">당일치기</span>
+                </label>
+                <label>
+                  <input type="radio" name="duration" value="1박 2일">
+                  <span class="option-btn">1박 2일</span>
+                </label>
+                <label>
+                  <input type="radio" name="duration" value="2박 3일">
+                  <span class="option-btn">2박 3일</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 관심 테마 설정 -->
+            <div class="form-group">
+              <label>관심 있는 분야 (중복 가능)</label>
+              <div class="checkbox-group">
+                <label>
+                  <input type="checkbox" name="themes" value="역사/문화" checked>
+                  <span class="option-btn">🏛️ 역사와 전설</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="맛집">
+                  <span class="option-btn">🍜 로컬 맛집</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="포토존">
+                  <span class="option-btn">📸 인생샷 명소</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="자연">
+                  <span class="option-btn">🌲 자연과 힐링</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 제출 버튼 -->
+        <button type="submit" class="btn-submit" id="btnSubmit">🎨 가이드북 엮기</button>
+      </form>
+    </section>
+
+    <!-- 2. 생성 중 로딩 상태 표시 -->
+    <section class="loading-container" id="loadingContainer">
+      <div class="loading-spinner"></div>
+      <p class="loading-message" id="loadingMessage">현지 가이드북 자료 수집 중...</p>
+      <p class="loading-subtext">AI가 사실 관계를 검증하고 책의 일러스트를 준비하고 있습니다. 잠시만 기다려 주세요.</p>
+    </section>
+
+    <!-- 3. 생성 완료 후 e-Book 뷰어 화면 -->
+    <section class="book-wrapper" id="bookWrapper">
+      <div class="book-container">
+        <div class="book" id="ebook">
+          <!-- 페이지 요소들은 JS에서 동적으로 렌더링되어 포개집니다. -->
+        </div>
+      </div>
+
+      <!-- 내비게이션 및 TTS 컨트롤 바 -->
+      <div class="controls-container">
+        <!-- 뷰어 조작 버튼 -->
+        <div class="nav-buttons">
+          <button class="btn-circle" id="btnPrevPage" title="이전 페이지" disabled>◀</button>
+          <span class="page-indicator" id="pageIndicator">Page 0 / 0</span>
+          <button class="btn-circle" id="btnNextPage" title="다음 페이지">▶</button>
+        </div>
+
+        <!-- 오디오 재생 카드 -->
+        <div class="audio-card">
+          <div class="audio-info">
+            <span class="audio-icon" id="audioIcon">🔊</span>
+            <span class="audio-status" id="audioStatus">낭독이 일시 정지되었습니다.</span>
+          </div>
+          <div class="audio-controls">
+            <button class="btn-audio" id="btnPlayAudio" title="재생">▶</button>
+            <button class="btn-audio" id="btnStopAudio" title="정지" style="font-size: 0.95rem;">⏹</button>
+          </div>
+        </div>
+        
+        <!-- 홈으로 돌아가기 버튼 -->
+        <button type="button" class="option-btn" id="btnBackToForm" style="margin-top: 1rem;">
+          🏠 새 책 만들기
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 4. 에러 알림 팝업 모달 -->
+  <div class="modal-overlay" id="errorModal">
+    <div class="error-modal">
+      <div class="error-icon">⚠️</div>
+      <h3 id="errorTitle">오류가 발생했습니다</h3>
+      <p id="errorMessage">서버와의 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.</p>
+      <button class="btn-close-modal" id="btnCloseModal">확인</button>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,895 @@
+/* ==========================================================================
+   Travel e-Book Platform CSS (Design System: Paper-cut & Diorama)
+   ========================================================================== */
+
+/* 1. 웹 폰트 임포트 */
+@import url('https://fonts.googleapis.com/css2?family=Maru+Buri:wght@300;400;600&family=Pretendard:wght@300;400;600;700&display=swap');
+
+/* 2. 전역 변수 선언 */
+:root {
+  /* 색상 토큰 (서울 감성 절제 톤) */
+  --bg-eggshell: #FAF6F0;       /* 한지 백색 */
+  --text-charcoal: #3E403F;     /* 기와 회색 */
+  --text-muted: #6A6E6C;        /* 흐린 석회색 */
+  --color-primary: #8AA399;     /* 빛바랜 단청 녹청색 */
+  --color-secondary: #D6A28C;   /* 말린 살구빛 */
+  --color-accent: #AEBCC4;      /* 공기감 있는 담청색 */
+  --color-card-bg: #FFFFFF;     /* 종이 면 백색 */
+  
+  /* 폰트 토큰 */
+  --font-serif: 'Maru Buri', 'Nanum Myeongjo', serif;
+  --font-sans: 'Pretendard', 'Noto Sans KR', sans-serif;
+  
+  /* 그림자 토큰 (종이 겹침 입체그림자) */
+  --shadow-flat: 0 2px 4px rgba(62, 64, 63, 0.05);
+  --shadow-paper: 0 8px 24px rgba(62, 64, 63, 0.08), 
+                  0 2px 8px rgba(62, 64, 63, 0.04);
+  --shadow-layered: 0 15px 35px rgba(62, 64, 63, 0.12), 
+                    0 5px 15px rgba(62, 64, 63, 0.06);
+  --shadow-deep: 0 20px 45px rgba(62, 64, 63, 0.15);
+  
+  /* 트랜지션 */
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-turn: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* 3. 기본 리셋 및 배경 설정 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text-charcoal);
+  background-color: var(--bg-eggshell);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* 흐릿한 배경 레이어 (글래스모피즘 분위기 연출용) */
+.bg-blur-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) brightness(0.95);
+  transform: scale(1.1);
+  transition: var(--transition-smooth);
+  opacity: 0.15;
+}
+
+/* 종이 질감용 오버레이 SVG 필터 효과 */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* 4. 레이아웃 구조 */
+header {
+  width: 100%;
+  max-width: 1200px;
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-charcoal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo span {
+  color: var(--color-primary);
+}
+
+main {
+  width: 100%;
+  max-width: 1200px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem 3rem 1.5rem;
+}
+
+/* 5. 메인 입력 폼 (Landing Page) */
+.creation-card {
+  width: 100%;
+  max-width: 600px;
+  background: var(--color-card-bg);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: var(--shadow-paper);
+  border: 1px solid rgba(62, 64, 63, 0.08);
+  transition: var(--transition-smooth);
+}
+
+.creation-card:hover {
+  box-shadow: var(--shadow-layered);
+}
+
+.creation-card h2 {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.creation-card p.subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-charcoal);
+}
+
+.input-text {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(62, 64, 63, 0.15);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--text-charcoal);
+  background-color: var(--bg-eggshell);
+  transition: var(--transition-smooth);
+}
+
+.input-text:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(138, 163, 153, 0.2);
+}
+
+/* 아코디언 상세 옵션 */
+.accordion-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 0;
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.accordion-toggle:hover {
+  color: var(--color-secondary);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out;
+}
+
+.accordion-content.open {
+  max-height: 500px;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  padding-top: 1rem;
+  padding-bottom: 1.5rem;
+  border-top: 1px solid rgba(62, 64, 63, 0.08);
+}
+
+/* 라디오 & 체크박스 버튼 커스텀 스타일 */
+.radio-group, .checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.option-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+  border: 1px solid rgba(62, 64, 63, 0.15);
+  background: var(--color-card-bg);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition-smooth);
+  user-select: none;
+}
+
+.option-btn:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(138, 163, 153, 0.05);
+}
+
+/* 숨겨진 실제 input */
+.radio-group input, .checkbox-group input {
+  display: none;
+}
+
+.radio-group input:checked + .option-btn,
+.checkbox-group input:checked + .option-btn {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 폼 제출 버튼 */
+.btn-submit {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: none;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-flat);
+  transition: var(--transition-smooth);
+  margin-top: 1rem;
+}
+
+.btn-submit:hover {
+  background-color: #798E85;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-paper);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+/* 6. 로딩 오버레이 */
+.loading-container {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 600px;
+  padding: 3rem;
+  background: var(--color-card-bg);
+  border-radius: 20px;
+  box-shadow: var(--shadow-paper);
+  border: 1px solid rgba(62, 64, 63, 0.08);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(138, 163, 153, 0.2);
+  border-left-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 2rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-message {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-charcoal);
+  min-height: 1.8rem;
+}
+
+.loading-subtext {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* 7. 전자책 뷰어 영역 (Book Platform) */
+.book-wrapper {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3D 양면 책 */
+.book-container {
+  width: 100%;
+  max-width: 1000px;
+  height: 550px;
+  perspective: 1500px;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.book {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: relative;
+  background: transparent;
+  transform-style: preserve-3d;
+}
+
+/* 공통 페이지 정의 (양장본 하드북 스타일) */
+.page {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  top: 0;
+  background-color: var(--color-card-bg);
+  box-shadow: var(--shadow-layered);
+  transition: var(--transition-turn);
+  transform-style: preserve-3d;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid rgba(62, 64, 63, 0.08);
+}
+
+/* 책 중앙 경계 홈선 */
+.book::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, rgba(255,255,255,0.15) 50%, rgba(0,0,0,0.15) 100%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* 왼쪽/오른쪽 기본 위치 설정 */
+.page-left {
+  left: 0;
+  border-radius: 12px 0 0 12px;
+  transform-origin: right center;
+  justify-content: flex-end;
+}
+
+.page-right {
+  right: 0;
+  border-radius: 0 12px 12px 0;
+  transform-origin: left center;
+}
+
+/* 겹쳐있는 각 페이지 레이어 */
+.book-cover {
+  z-index: 10;
+}
+
+.book-inside {
+  z-index: 5;
+}
+
+/* 종이 내용 영역 */
+.page-content {
+  width: 100%;
+  height: 100%;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backface-visibility: hidden;
+}
+
+/* 왼쪽 페이지: 주로 고화질 비주얼 (사진/일러스트) */
+.visual-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Unsplash 이미지 */
+.visual-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* 이미지 그라데이션 오버레이 */
+.visual-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(62,64,63,0.1) 0%, rgba(62,64,63,0.6) 100%);
+  z-index: 2;
+}
+
+.visual-title {
+  position: relative;
+  z-index: 3;
+  color: #FFFFFF;
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  line-height: 1.3;
+}
+
+.visual-credits {
+  position: relative;
+  z-index: 3;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+}
+
+/* 오른쪽 페이지: 스토리텔링 본문 */
+.story-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.story-header {
+  border-bottom: 1px solid rgba(62, 64, 63, 0.08);
+  padding-bottom: 0.75rem;
+}
+
+.story-chapter {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.story-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-charcoal);
+}
+
+.story-body {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-charcoal);
+  text-align: justify;
+  margin: 1.5rem 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* 스크롤바 디자인 */
+.story-body::-webkit-scrollbar {
+  width: 4px;
+}
+.story-body::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+
+.story-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(62, 64, 63, 0.08);
+  padding-top: 0.75rem;
+}
+
+/* 일정 타임라인 전용 페이지 스타일 */
+.itinerary-panel {
+  padding: 2rem;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.itinerary-panel h3 {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--text-charcoal);
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: 0.5rem;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--color-accent);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -21px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  border: 2px solid var(--color-card-bg);
+}
+
+.timeline-time {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 0.15rem;
+}
+
+.timeline-place {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-charcoal);
+  margin-bottom: 0.25rem;
+}
+
+.timeline-desc {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* 8. 도서 컨트롤러 (Navigation & TTS) */
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.btn-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(62, 64, 63, 0.15);
+  background-color: var(--color-card-bg);
+  color: var(--text-charcoal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-flat);
+  transition: var(--transition-smooth);
+  font-size: 1.2rem;
+}
+
+.btn-circle:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-paper);
+}
+
+.btn-circle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-charcoal);
+  user-select: none;
+}
+
+/* 오디오 플레이어 */
+.audio-card {
+  width: 100%;
+  max-width: 450px;
+  background-color: var(--color-card-bg);
+  border-radius: 30px;
+  padding: 0.6rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-flat);
+  border: 1px solid rgba(62, 64, 63, 0.06);
+}
+
+.audio-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.audio-icon {
+  font-size: 1.2rem;
+  color: var(--color-primary);
+}
+
+.audio-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-charcoal);
+}
+
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-audio {
+  background: none;
+  border: none;
+  color: var(--text-charcoal);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: var(--transition-smooth);
+}
+
+.btn-audio:hover {
+  color: var(--color-primary);
+}
+
+/* 9. 에러 안내 모달 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(62, 64, 63, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.error-modal {
+  width: 100%;
+  max-width: 450px;
+  background-color: var(--color-card-bg);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow-layered);
+  border: 1px solid rgba(62, 64, 63, 0.1);
+  text-align: center;
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.error-icon {
+  width: 60px;
+  height: 60px;
+  background-color: rgba(214, 162, 140, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--color-secondary);
+  margin: 0 auto 1.25rem auto;
+}
+
+.error-modal h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-charcoal);
+}
+
+.error-modal p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.btn-close-modal {
+  padding: 0.65rem 2rem;
+  border-radius: 20px;
+  border: none;
+  background-color: var(--text-charcoal);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-close-modal:hover {
+  background-color: var(--color-secondary);
+}
+
+/* ==========================================================================
+   10. 반응형 미디어 쿼리 (Responsive Grid System)
+   ========================================================================== */
+
+/* 태블릿 이하 (가로 1024px 이하) */
+@media (max-width: 1024px) {
+  .book-container {
+    height: 480px;
+  }
+  
+  .page-content {
+    padding: 2rem;
+  }
+  
+  .story-body {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+}
+
+/* 모바일 (가로 768px 이하) - 양면 펼침에서 1면 카드 세로 뷰로 전환 */
+@media (max-width: 768px) {
+  header {
+    padding: 1.5rem 1rem 0.5rem 1rem;
+  }
+  
+  main {
+    padding: 0 1rem 2rem 1rem;
+  }
+  
+  .creation-card {
+    padding: 1.75rem;
+  }
+  
+  .creation-card h2 {
+    font-size: 1.5rem;
+  }
+
+  /* 3D 펼침 책에서 단일 카드 형식으로 완전히 구조 변경 */
+  .book-container {
+    height: auto;
+    perspective: none;
+    margin-bottom: 1.5rem;
+  }
+
+  .book {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    transform: none !important;
+    transform-style: flat;
+  }
+
+  .page {
+    position: relative;
+    width: 100% !important;
+    height: auto !important;
+    left: auto !important;
+    right: auto !important;
+    border-radius: 12px !important;
+    transform: none !important;
+    margin-bottom: 1.5rem;
+    display: none; /* 슬라이드 쇼처럼 한 페이지만 표시 */
+    box-shadow: var(--shadow-paper);
+  }
+
+  .page.active-page {
+    display: block; /* 활성 페이지만 노출 */
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .page-content {
+    height: 400px;
+    padding: 1.5rem;
+  }
+  
+  .visual-panel {
+    height: 250px;
+    padding: 1.25rem;
+  }
+  
+  .visual-title {
+    font-size: 1.4rem;
+  }
+
+  .story-body {
+    font-size: 0.9rem;
+    margin: 1rem 0;
+  }
+  
+  .timeline-place {
+    font-size: 0.95rem;
+  }
+  
+  .timeline-desc {
+    font-size: 0.8rem;
+  }
+}
+
+/* 아주 작은 모바일 기기 (480px 이하) */
+@media (max-width: 480px) {
+  .creation-card {
+    padding: 1.25rem;
+  }
+  
+  .option-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .page-content {
+    height: 380px;
+  }
+}
