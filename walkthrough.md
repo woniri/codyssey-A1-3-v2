@@ -1,96 +1,77 @@
-# 📖 여행 e-Book 플랫폼 개발 완료 검증 및 배포 안내서 (Walkthrough)
+# 📖 북어 트립 (Book어 Trip) 개발 완성본 설명 및 검증 가이드 (Walkthrough)
 
-이 문서는 AI 기반 여행 스토리텔링 전자책 플랫폼의 전체 코드 아키텍처, 기능 검증 시나리오, 그리고 GitHub와 Vercel을 연동한 무료 배포 설정법을 제공합니다.
+이 문서는 북어 트립 플랫폼의 최종 완료된 코드 구조, 고도화된 기능 상세, 배포 설정법 및 품질 검증을 위한 테스트 케이스 사양을 다룹니다.
 
 ---
 
 ## 1. 프로젝트 폴더 및 파일 구조
 
-프로젝트 루트 디렉토리 [new-travel](file:///d:/Temp/0.코디세이/new-travel)의 최종 구조는 아래와 같습니다.
+프로젝트 루트 디렉토리 [new-travel](file:///d:/Temp/0.코디세이/new-travel)의 최종 뼈대 구조입니다.
 
 ```
 d:/Temp/0.코디세이/new-travel/
-├── index.html                   # 메인 폼 및 e-Book 뷰어가 통합된 HTML5 구조
+├── index.html                   # 메인 랜딩, 서재 책꽂이, 3D 가변 뷰어, 보관함 Drawer 통합 HTML
 ├── css/
-│   └── styles.css               # 페이퍼 아트 스타일링, 서울 감성 파스텔 톤, 3D 책 회전 CSS
+│   └── styles.css               # 페이퍼아트 섀도우, 부유 오브젝트 모션, 가변 비율(aspect-ratio), 책꽂이 3D 그래픽 CSS
 ├── js/
-│   └── app.js                   # 프론트엔드 비즈니스 로직 (CORS API 통신, Web Speech TTS, 반응형 뷰포트 분기)
+│   └── app.js                   # API 다단계 통신, Pollinations AI 연동, LocalStorage 보존, HTML 내보내기, TTS 낭독 JS
 ├── api/
-│   └── index.py                 # Vercel Python Serverless Function 진입점 (FastAPI 백엔드 설계)
-├── requirements.txt             # Python 의존 라이브러리 목록 (google-generativeai, requests, fastapi, uvicorn)
-├── vercel.json                  # Vercel 빌드 및 라우팅 설정 파일
-├── travel_ebook_platform_plan.md  # 최종 기획서
-├── study_guide.md               # 초등학생 눈높이 학습용 교육 문서
+│   └── index.py                 # Vercel Python Serverless Function (FastAPI 스마트 서재 판정 및 e-Book 생성)
+├── requirements.txt             # 파이썬 웹 의존성 패키지 (google-genai, fastapi, uvicorn, requests)
+├── vercel.json                  # Vercel 정적 자원 및 백엔드 파이썬 완전 분리 라우팅 명세서
+├── travel_ebook_platform_plan.md  # 최종 고도화 기획서
+├── study_guide.md               # 프로그래밍 입문 학생 대상 개념 교육용 학습서
 └── walkthrough.md               # [현재 파일] 개발 완성 검증 및 배포 안내서
-
 ```
 
 ---
 
-## 2. 주요 기술적 핵심 구현사항
+## 2. 고도화 완료 사양 핵심 요약
 
-### ① 페이퍼 컷팅(Paper-cut) 아트 CSS 디자인
-* 무광 질감을 표현하기 위해 CSS SVG Filter 효과를 결합하여 웹 화면에 보이지 않는 아주 미세한 입자 노이즈를 얹었습니다.
-* 여러 장의 오려낸 종이가 겹쳐서 떠 있는 입체감을 주기 위해, 요소들에 넓게 퍼지는 다중 입체 섀도우를 입혔습니다.
-  ```css
-  box-shadow: 0 8px 24px rgba(62, 64, 63, 0.08), 
-              0 2px 8px rgba(62, 64, 63, 0.04);
-  ```
-* 톤다운된 서울 감성의 파스텔 팔레트(한지 백색 `#FAF6F0`, 기와 회색 `#3E403F`, 단청 녹청색 `#8AA399`, 살구색 `#D6A28C`)를 CSS 변수화하여 테마 무드를 통일했습니다.
+### ① 스마트 서재(Book Shelf UI) 분할 흐름
+* 검색 직후 바로 단일 도서가 펼쳐지는 대신, 1차 API인 `/api/search`가 지역 규모를 판정합니다.
+* 판정된 결과에 맞춰 목재 책꽂이 그래픽 위에 3D 책 카드로 꽂아 렌더링하며, 사용자가 읽고 싶은 책을 고르면 비로소 상세 생성 API인 `/api/generate`를 찔러 e-Book을 조립하는 **다단계 검색 흐름**을 연출했습니다.
 
-### ② 모바일 / PC 반응형 분기 대응 (CSS Media Query)
-* **데스크톱/태블릿**: 양면 펼침형 책 뷰어를 렌더링하고, 이전/다음 버튼 클릭 시 3D 변환(`rotateY(-180deg)`)과 `z-index` 재계산을 통해 책장이 넘어가며 겹치는 효과를 구현했습니다.
-* **모바일 (768px 이하)**: 펼침 뷰어가 공간적 한계를 가지므로, `display: none`과 `active-page` 클래스를 제어하는 **단일 카드 슬라이드 뷰**로 자동 전환 및 마감 처리했습니다.
+### ② AI 종이공예 일러스트 생성 및 CSS 리터칭
+* Unsplash의 무작위성 이미지가 가져오던 매칭 오차를 근절하기 위해, 실시간 무료 생성 AI인 **Pollinations AI** 이미지 엔진을 매핑했습니다.
+* 프롬프트 템플릿에 `layered paper-cut collage, handcrafted paper diorama` 키워드를 조율하여 감성적인 종이 아트 화풍을 일관되게 생성합니다.
+* 생성된 이미지 위에 CSS `sepia(12%)`, `contrast(92%)` 필터를 적용해 무광 과슈 종이 특유의 촉촉하고 부드러운 손맛 질감으로 리터칭했습니다.
 
-### ③ 백엔드 Gemini API & Unsplash 이미지 연동
-* 파이썬 API `api/index.py`에서는 사용자가 고른 관심사, 기간, 목소리 스타일을 매개변수화해 Gemini API에 JSON 구조로 응답하도록 요령껏 프롬프팅(`Structured JSON Output`)합니다.
-* 책의 표지와 각 페이지 챕터 내용에 맞는 감성 풍경 사진을 가져오기 위해 Unsplash API 조회 모듈을 탑재했으며, API Key가 누락되었을 시 깨지지 않도록 방어 코드(무료 풍경 이미지 주소로 리다이렉션)가 장착되어 있습니다.
+### ③ 가변형 종횡비 뷰어 및 짝수 페이지 보정
+* 데스크톱 화면에서 책이 너무 작게 나타나는 문제를 타파하기 위해, 퍼센트 뷰포트 너비(`width: 85vw`)와 가변 비율(`aspect-ratio: 16/9`)을 3D 책 뷰어에 적용하여 대화면에서도 시원하게 확대되도록 구성했습니다.
+* 2박 3일 이상의 장기 일정 추가 시 페이지 홀짝 균형이 깨져 일정이 잘리던 버그를 고치기 위해, 생성된 총 페이지 수가 홀수이면 자동으로 빈 우측 백커버(Back Cover) 책장을 덧붙여 전체 루프 인덱스를 짝수로 정합시키는 보정 모듈을 장착했습니다.
 
-### ④ 서버 비용 0원의 오디오 내레이션
-* 유료 TTS 솔루션 대신, 프론트엔드 브라우저 내장 API인 `window.speechSynthesis`를 호출하여 한국어 보이스(`ko-KR`)로 책 내용을 읽어줍니다. 
-* 페이지 전환 시 이전에 읽던 오디오를 자동 정지(`synth.cancel()`)하고, 새 페이지 스크립트를 동기화하여 읽는 매끄러운 UX를 탑재했습니다.
+### ④ 보관함(LocalStorage) 및 단일 파일 내보내기(Export)
+* 브라우저 로컬스토리지에 저장 공간을 개설하여 엮은 도서를 영구 저장하고, 우측 슬라이더 Drawer를 통해 언제든 즉각 재호출하는 보관함을 완성했습니다.
+* 뷰어 하단에 내보내기 버튼을 배치해, 텍스트와 이미지 경로, 시간표 일정이 단청색 에디토리얼 레이아웃 포스터 서식으로 자동 합성된 **오프라인 소장용 단일 HTML 파일 다운로드** 기능을 연동했습니다.
 
 ---
 
-## 3. GitHub 및 Vercel 무료 배포 설정 가이드 (CI/CD)
+## 3. GitHub 및 Vercel 무료 배포 가이드 (CI/CD)
 
-이 플랫폼은 Git과 Vercel의 무료 요금제를 사용하여 5분 안에 전 세계에 출시할 수 있습니다.
+Vercel의 파이썬 배포 환경(FastAPI)을 위해 수정한 `vercel.json` 기반의 배포 방법입니다.
 
-### Step 1. GitHub 원격 저장소 생성 및 코드 푸시
-1. 본인의 GitHub에 로그인하고 새로운 Repository(예: `my-travel-book`)를 생성합니다.
-2. 로컬 컴퓨터의 프로젝트 루트 폴더에서 아래 Git 명령어를 실행해 업로드합니다.
+1. **GitHub 업로드**:
    ```bash
-   git init
    git add .
-   git commit -m "feat: AI 여행 스토리텔링 책방 최초 완성"
-   git branch -M main
-   git remote add origin https://github.com/사용자이름/my-travel-book.git
-   git push -u origin main
+   git commit -m "feat: complete Book어 Trip platform with explicit vercel routes"
+   git push origin main
    ```
-
-### Step 2. Vercel 가입 및 프로젝트 연동
-1. [Vercel 공식 홈페이지](https://vercel.com)에 GitHub 계정으로 가입 및 로그인합니다.
-2. 대시보드에서 `Add New` ➡️ `Project`를 누르고, 방금 업로드한 GitHub 저장소(`my-travel-book`)를 찾아 **Import** 합니다.
-
-### Step 3. 환경 변수 (Environment Variables) 등록 (⚠️ 매우 중요!)
-배포 설정창 하단의 **Environment Variables** 탭을 열고 아래 인증키 정보를 정확히 기재합니다.
-* **`GEMINI_API_KEY`**: Google AI Studio에서 발급받은 무료 Gemini API 키.
-* **`UNSPLASH_ACCESS_KEY`**: Unsplash Developer 사이트에서 발급받은 이미지 API 액세스 키 (생략 시 기본 풍경 매칭으로 우회 작동).
-
-### Step 4. 배포(Deploy) 완료
-* **Deploy** 버튼을 누르면 Vercel이 파이썬 패키지를 자동으로 내려받고 빌드하여 1~2분 안에 무료 도메인 주소(예: `https://my-travel-book.vercel.app`)를 발급해 줍니다.
-* 이후 GitHub 저장소로 코드를 푸시(`git push`)할 때마다 Vercel이 변경 사항을 감지해 자동으로 최신 배포를 갱신합니다.
+2. **Vercel 연동**:
+   Vercel 대시보드에서 `woniri/codyssey-A1-3-v2` 저장소를 가져옵니다.
+3. **환경 변수 등록 (중요)**:
+   * **`GEMINI_API_KEY`**: 구글 AI 스튜디오에서 발급받은 무료 API 키값 입력.
+4. **Redeploy**:
+   환경 변수를 저장한 뒤 대시보드 `Deployments`에서 최신 빌드를 **Redeploy** 해 줍니다. Vercel이 `vercel.json` 명세서대로 파이썬과 정적 리소스를 충돌 없이 개별 빌드해 단 몇 분 만에 배포 URL을 활성화해 줍니다.
 
 ---
 
-## 4. 품질 검증 및 테스트 시나리오
-
-서비스 배포 전 다음 시나리오를 통해 안정성을 검증합니다.
+## 4. 품질 검증 테스트 시나리오
 
 | 테스트 ID | 테스트 영역 | 검증 항목 | 기대 결과 |
 | :--- | :--- | :--- | :--- |
-| **TC-01** | **입력 폼 및 옵션** | 세부 옵션 아코디언 버튼 클릭 | 세부 설정창이 부드러운 애니메이션으로 여닫히며 아이콘 텍스트 변환 검증 |
-| **TC-02** | **예외 및 실패** | 검색창 비우고 제출 / API 미등록 상태 호출 | 에러 메시지가 담긴 모달 경고창이 정확히 노출되며 복구 여부 확인 |
-| **TC-03** | **반응형 레이아웃** | 브라우저 창 너비를 768px 이하로 인위적 축소 | 3D 양면 책에서 모바일 전용 1면 카드 뷰 및 슬라이드 구조로 자동 전환 검증 |
-| **TC-04** | **오디오 낭독** | 재생(▶) 및 일시정지(⏸) 버튼 작동 | 음성이 매끄러운 한국어 발음으로 재생되며, 페이지 이동 시 낭독이 정지 후 새로 동기화되는지 확인 |
-| **TC-05** | **데이터 무결성** | 생성 완료 후 홈 이동 및 초기화 | 홈 버튼 및 뒤로가기 클릭 시 전자책이 해제되고 폼 데이터가 깨끗이 초기화되는지 확인 |
+| **TC-01** | **서재 분할 흐름** | "경주" 검색 후 책꽂이 노출 및 도서 선택 | 대규모 판정으로 책꽂이에 책 3권이 입체적으로 꽂히고, 클릭 시에만 e-Book 빌드가 트리거되는지 확인 |
+| **TC-02** | **일정 완전성** | 2박 3일, 3박 4일 설정 후 일정 생성 | 책의 맨 뒤편에 Day 1부터 Day 3 이상의 전체 타임라인 일정이 중간 누락이나 페이지 잘림 없이 짝이 맞춰 렌더링되는지 확인 |
+| **TC-03** | **디자인 가변성** | 데스크톱 브라우저 창 크기를 늘이고 줄임 | `aspect-ratio`에 의해 책의 좌우 펼침 비율이 16:9 규격으로 선명하고 비례적으로 자동 스케일링되는지 확인 |
+| **TC-04** | **로컬 보관함** | 도서 생성 후 보관함 Drawer 작동 확인 | 책 생성 시 보관함 리스트에 실시간 썸네일 카드로 안착하고, 클릭 시 즉시(0.1초) 해당 도서 데이터로 뷰어가 복원되는지 검증 |
+| **TC-05** | **파일 내보내기** | `💾 다운로드` 버튼 클릭 및 파일 검증 | 가이드북 HTML 소장 파일이 다운로드되며, 인터넷을 차단한 오프라인 상태에서 더블클릭 실행 시 단청색 인쇄 레이아웃 서식이 깨짐 없이 렌더링되는지 검증 |

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AI 여행 가이드북 및 페이퍼 아트 전자책 생성기. 나만의 동반자와 함께 전 세계 문화를 탐험해 보세요.">
-  <title>AI 감성 여행 책방 - 당신의 여행 동반자</title>
+  <meta name="description" content="북어 트립(Book어 Trip) - AI 페이퍼 아트 여행 도서 생성 및 오디오 가이드북 플랫폼">
+  <title>북어 트립 🍒 - 당신만을 위한 여행 책방</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -15,28 +15,41 @@
   <!-- 헤더 영역 -->
   <header>
     <div class="logo" id="btnHome">
-      <span>📖</span> AI 여행 책방
+      <span>🍒</span> 북어 트립 <small>Book어 Trip</small>
     </div>
+    <!-- 내 보관함 열기 버튼 -->
+    <button class="btn-cabinet" id="btnOpenCabinet">
+      🗄️ 내 서재 보관함
+    </button>
   </header>
 
   <!-- 메인 본문 콘텐츠 -->
   <main>
     
-    <!-- 1. 생성 입력 폼 카드 -->
+    <!-- 1. 여행 감성의 메인 입력 폼 카드 -->
     <section class="creation-card" id="creationCard">
-      <h2>나만의 AI 가이드북 만들기</h2>
-      <p class="subtitle">떠나고 싶은 도시나 명소를 입력하시면 감성적인 전자책과 일정을 구성해 드립니다.</p>
+      <!-- 둥실둥실 부유하는 여행 종이 공예 데코 카드 -->
+      <div class="deco-objects">
+        <div class="deco-item ticket">🎫</div>
+        <div class="deco-item compass">🧭</div>
+        <div class="deco-item plane">✈️</div>
+        <div class="deco-item cloud-left">☁️</div>
+        <div class="deco-item cloud-right">☁️</div>
+      </div>
+
+      <h2>책으로 떠나는 깊이 있는 여행 🍒</h2>
+      <p class="subtitle">가고 싶은 도시나 지역명을 입력해 보세요. 나만의 일러스트 책방이 펼쳐집니다.</p>
       
       <form id="creationForm" onsubmit="return false;">
         <!-- 여행지 입력 -->
         <div class="form-group">
-          <label for="destination">어디로 떠나시나요? (필수)</label>
-          <input type="text" id="destination" class="input-text" placeholder="예: 경주 불국사, 도쿄, 파리 에펠탑" required autocomplete="off">
+          <label for="destination">어디로 떠나고 싶으신가요? (필수)</label>
+          <input type="text" id="destination" class="input-text" placeholder="예: 경주, 항저우, 서울, 제주도, 도쿄" required autocomplete="off">
         </div>
 
         <!-- 아코디언 설정 버튼 -->
         <button type="button" class="accordion-toggle" id="btnToggleOptions">
-          ⚙️ 세부 옵션 맞춤 설정 <span id="accordionIcon">▼</span>
+          ⚙️ 세부 여행 취향 맞춤 설정 <span id="accordionIcon">▼</span>
         </button>
 
         <!-- 아코디언 상세 설정 내부 -->
@@ -45,61 +58,72 @@
             
             <!-- 가이드 스타일 선택 -->
             <div class="form-group">
-              <label>가이드 목소리 & 이야기 스타일</label>
+              <label>가이드 톤앤매너</label>
               <div class="radio-group">
                 <label>
                   <input type="radio" name="style" value="cherry" checked>
-                  <span class="option-btn">🍒 체리의 다정한 가이드</span>
+                  <span class="option-btn">🍒 체리의 다정한 로컬 가이드</span>
                 </label>
                 <label>
                   <input type="radio" name="style" value="expert">
-                  <span class="option-btn">🎓 정중한 해설사 가이드</span>
+                  <span class="option-btn">🎓 정중한 역사 해설사 가이드</span>
                 </label>
                 <label>
                   <input type="radio" name="style" value="kids">
-                  <span class="option-btn">👶 아이들을 위한 동화책</span>
+                  <span class="option-btn">👶 쉽고 재밌는 동화 가이드</span>
                 </label>
               </div>
             </div>
 
-            <!-- 여행 일정 설정 -->
+            <!-- 여행 일정 설정 (드롭다운으로 확장) -->
             <div class="form-group">
-              <label>추천 일정 기간</label>
-              <div class="radio-group">
-                <label>
-                  <input type="radio" name="duration" value="당일치기" checked>
-                  <span class="option-btn">당일치기</span>
-                </label>
-                <label>
-                  <input type="radio" name="duration" value="1박 2일">
-                  <span class="option-btn">1박 2일</span>
-                </label>
-                <label>
-                  <input type="radio" name="duration" value="2박 3일">
-                  <span class="option-btn">2박 3일</span>
-                </label>
+              <label for="durationSelect">추천 일정 기간</label>
+              <div class="select-wrapper">
+                <select id="durationSelect" name="duration" class="input-select">
+                  <option value="당일치기">당일치기 완벽 동선</option>
+                  <option value="1박 2일" selected>1박 2일 알찬 코스</option>
+                  <option value="2박 3일">2박 3일 힐링 코스</option>
+                  <option value="3박 4일">3박 4일 심층 코스</option>
+                  <option value="4박 5일">4박 5일 자유 대탐험</option>
+                </select>
               </div>
             </div>
 
-            <!-- 관심 테마 설정 -->
+            <!-- 관심 테마 설정 (8개 확장) -->
             <div class="form-group">
-              <label>관심 있는 분야 (중복 가능)</label>
+              <label>나의 주요 여행 테마 (중복 가능)</label>
               <div class="checkbox-group">
                 <label>
-                  <input type="checkbox" name="themes" value="역사/문화" checked>
+                  <input type="checkbox" name="themes" value="역사/전설" checked>
                   <span class="option-btn">🏛️ 역사와 전설</span>
                 </label>
                 <label>
-                  <input type="checkbox" name="themes" value="맛집">
-                  <span class="option-btn">🍜 로컬 맛집</span>
+                  <input type="checkbox" name="themes" value="맛집/카페">
+                  <span class="option-btn">🍜 맛집과 카페</span>
                 </label>
                 <label>
-                  <input type="checkbox" name="themes" value="포토존">
-                  <span class="option-btn">📸 인생샷 명소</span>
+                  <input type="checkbox" name="themes" value="인생샷 포토존">
+                  <span class="option-btn">📸 인생샷 포토존</span>
                 </label>
                 <label>
-                  <input type="checkbox" name="themes" value="자연">
+                  <input type="checkbox" name="themes" value="자연/힐링">
                   <span class="option-btn">🌲 자연과 힐링</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="미술/건축">
+                  <span class="option-btn">🎨 미술과 건축</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="쇼핑/기념품">
+                  <span class="option-btn">🛍️ 쇼핑과 기념품</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="야경/밤거리">
+                  <span class="option-btn">🌙 야경과 밤거리</span>
+                </label>
+                <label>
+                  <input type="checkbox" name="themes" value="현지 체험">
+                  <span class="option-btn">🏺 현지 전통체험</span>
                 </label>
               </div>
             </div>
@@ -108,18 +132,38 @@
         </div>
 
         <!-- 제출 버튼 -->
-        <button type="submit" class="btn-submit" id="btnSubmit">🎨 가이드북 엮기</button>
+        <button type="submit" class="btn-submit" id="btnSubmit">🎨 내 도서관 엮기</button>
       </form>
     </section>
 
-    <!-- 2. 생성 중 로딩 상태 표시 -->
+    <!-- 2. 스마트 책 분할: 책꽂이 서재 화면 (Book Shelf UI) -->
+    <section class="bookshelf-wrapper" id="bookshelfWrapper">
+      <div class="bookshelf-header">
+        <h2 id="bookshelfTitle">여정을 엮어낼 이야기 도서</h2>
+        <p class="subtitle">이 구역에서 제작 가능한 가이드북 리스트입니다. 읽고 싶은 책을 골라 펼쳐보세요.</p>
+      </div>
+
+      <!-- 책꽂이 그래픽 그리드 -->
+      <div class="shelf-container">
+        <div class="shelf-wood"></div>
+        <div class="books-grid" id="booksGrid">
+          <!-- JS에서 책꽂이 책 리스트를 동적으로 렌더링합니다. -->
+        </div>
+      </div>
+
+      <button type="button" class="btn-back-shelf" id="btnBackToFormFromShelf">
+        ◀ 검색 화면으로 돌아가기
+      </button>
+    </section>
+
+    <!-- 3. 생성 중 로딩 상태 표시 -->
     <section class="loading-container" id="loadingContainer">
       <div class="loading-spinner"></div>
       <p class="loading-message" id="loadingMessage">현지 가이드북 자료 수집 중...</p>
-      <p class="loading-subtext">AI가 사실 관계를 검증하고 책의 일러스트를 준비하고 있습니다. 잠시만 기다려 주세요.</p>
+      <p class="loading-subtext">AI가 역사적 전설을 검증하고, 종이 공예 감성의 삽화를 실시간으로 깎아내어 그리고 있습니다.</p>
     </section>
 
-    <!-- 3. 생성 완료 후 e-Book 뷰어 화면 -->
+    <!-- 4. 생성 완료 후 e-Book 뷰어 화면 (데스크톱 가변 비율) -->
     <section class="book-wrapper" id="bookWrapper">
       <div class="book-container">
         <div class="book" id="ebook">
@@ -136,7 +180,7 @@
           <button class="btn-circle" id="btnNextPage" title="다음 페이지">▶</button>
         </div>
 
-        <!-- 오디오 재생 카드 -->
+        <!-- 오디오 재생 및 파일 다운로드 카드 -->
         <div class="audio-card">
           <div class="audio-info">
             <span class="audio-icon" id="audioIcon">🔊</span>
@@ -144,20 +188,37 @@
           </div>
           <div class="audio-controls">
             <button class="btn-audio" id="btnPlayAudio" title="재생">▶</button>
-            <button class="btn-audio" id="btnStopAudio" title="정지" style="font-size: 0.95rem;">⏹</button>
+            <button class="btn-audio" id="btnStopAudio" title="정지">⏹</button>
+            <span class="divider">|</span>
+            <!-- 다운로드 버튼 추가 -->
+            <button class="btn-download" id="btnDownloadBook" title="소장용 HTML 가이드북 다운로드">
+              💾 다운로드
+            </button>
           </div>
         </div>
         
         <!-- 홈으로 돌아가기 버튼 -->
         <button type="button" class="option-btn" id="btnBackToForm" style="margin-top: 1rem;">
-          🏠 새 책 만들기
+          🏠 책꽂이 서재로 돌아가기
         </button>
       </div>
     </section>
 
   </main>
 
-  <!-- 4. 에러 알림 팝업 모달 -->
+  <!-- 5. 내 서재 보관함 슬라이더 Drawer -->
+  <section class="cabinet-drawer" id="cabinetDrawer">
+    <div class="drawer-header">
+      <h3>🗄️ 내 서재 보관함</h3>
+      <button class="btn-close-drawer" id="btnCloseCabinet">×</button>
+    </div>
+    <p class="drawer-subtitle">브라우저에 보존된 나만의 여행 도서 목록입니다. 언제든 다시 꺼내볼 수 있습니다.</p>
+    <div class="drawer-content" id="cabinetList">
+      <!-- 로컬 스토리지에 보관된 도서들이 여기에 썸네일 카드로 나열됩니다. -->
+    </div>
+  </section>
+
+  <!-- 6. 에러 알림 팝업 모달 -->
   <div class="modal-overlay" id="errorModal">
     <div class="error-modal">
       <div class="error-icon">⚠️</div>
