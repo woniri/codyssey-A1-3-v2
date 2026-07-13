@@ -22,28 +22,43 @@
 
 ---
 
-## 2. FastAPI 라우팅 및 데이터 검증 (Python Backend)
-서버 코드는 파이썬의 초고속 현대식 웹 프레임워크인 **FastAPI**로 만들어졌습니다.
+## 2. 관심사 분리를 위한 다단계 API 설계 (Multi-stage API)
+'북어 트립' 프로젝트는 한 번의 검색으로 대도시 시리즈와 단일 명소를 구분하기 위해 백엔드 API를 두 개의 단계로 나눈 **다단계 API 아키텍처**를 사용합니다.
 
-### ① 데코레이터 라우팅 (Routing)
-FastAPI는 파이썬 데코레이터 문법(`@app.post()`, `@app.get()`)을 사용하여 특정 웹 주소(URL)로 인입되는 요청을 담당 파이썬 함수와 연결해 줍니다.
-* `@app.post("/api/search")`: 사용자가 검색어를 보낼 때 서재의 책 목록을 쪼개어 판정해 주는 함수를 실행합니다.
-* `@app.post("/api/generate")`: 구체적인 책 스토리 본문과 일정을 생성하는 함수를 실행합니다.
+1. **1단계 검색 API (`POST /api/search`)**:
+   - 역할: 입력받은 키워드(예: 대한민국 vs 서울)의 크기와 범위를 신속히 판정합니다.
+   - 국가급 영역인 경우 시리즈(`SERIES`)로 쪼개어 하위 도서 목록을 클라이언트에 주고, 단일 도시인 경우 `SINGLE`로 판정하여 곧바로 책 한 권을 짓도록 클라이언트를 유도합니다.
+2. **2단계 생성 API (`POST /api/generate`)**:
+   - 역할: 판정된 세부 명소를 대상으로 정밀한 4페이지 분량의 스토리텔링 글과 타임라인 일정을 Gemini API 및 Unsplash 실제 관광지 풍경 사진 주소를 연동하여 최종 수급합니다.
 
-### ② Pydantic을 활용한 데이터 검증
-FastAPI는 **Pydantic** 라이브러리를 내장하여 클라이언트가 보낸 데이터가 규격에 맞는지 자동으로 검증해 줍니다.
-```python
-class TravelRequest(BaseModel):
-    destination: str
-    style: Optional[str] = "cherry"
-    duration: Optional[str] = "당일치기"
-    themes: Optional[List[str]] = []
-```
-클라이언트가 보내온 JSON 데이터가 이 구조와 다르면, 서버는 즉시 에러(`422 Unprocessable Entity`)를 내어 서버 내부 코드가 안전하게 실행될 수 있도록 방어 장벽을 형성합니다.
+> **💡 개발 팁 (관심사 분리 - Separation of Concerns)**:
+> 하나의 엔드포인트에서 검색어 판정과 무거운 책 본문 생성, 그리고 외부 사진 수급까지 한 번에 처리하려 하면 API 처리 시간이 너무 길어집니다. 이를 쪼개면 프론트엔드가 단계별로 부드러운 화면 전환(서재 화면 ➡️ 전자책 화면)을 만들어 낼 수 있습니다.
 
 ---
 
-## 3. CORS 보안과 Vercel 라우팅 우회 (Rewrites)
+## 3. 로컬 캐싱을 이용한 중복 요청 방지 (LocalStorage Cache)
+네트워크 연결은 비용이 발생하고 예기치 못한 실패가 생길 수 있습니다. 이를 효율적으로 해결하기 위해 **로컬 스토리지 캐시(Local Cache)** 기술을 도입했습니다.
+
+### ① 캐시(Cache)란 무엇인가요?
+이미 한 번 불러왔던 데이터나 연산 결과를 컴퓨터 메모리나 브라우저 보관함에 임시로 저장해 두고, 똑같은 데이터 요청이 들어왔을 때 서버를 거치지 않고 저장된 값을 즉시 꺼내 보여주는 **고속 저장소**를 뜻합니다.
+
+### ② 북어 트립의 캐시 매커니즘
+```javascript
+// 1. 상세 도서 생성 전 로컬 보관소(캐시) 스캔
+const cachedLibrary = JSON.parse(localStorage.getItem("my_travel_library")) || [];
+const existingBook = cachedLibrary.find(b => b.destination === book.theme);
+
+if (existingBook) {
+  // 2. 이미 과거에 엮었던 책이면 서버 API 호출을 완전히 생략하고 0.1초 만에 화면 렌더링!
+  buildEbook(existingBook);
+  return;
+}
+```
+이 캐싱 기술을 통해 사용자는 이미 한 번 만든 책에 한해서는 **네트워크 대기 없이 즉각적으로 전자책을 읽을 수 있게 되며**, 서버의 인프라 사용 부하도 대폭 줄여줍니다.
+
+---
+
+## 4. CORS 보안과 Vercel 라우팅 우회 (Rewrites)
 웹 프로그래밍을 처음 시작할 때 가장 많이 겪는 장벽 중 하나가 바로 **CORS(Cross-Origin Resource Sharing)** 보안 오류입니다.
 
 ### ① CORS란 무엇인가요?
@@ -51,40 +66,9 @@ class TravelRequest(BaseModel):
 
 ### ② 해결책: Middleware & Vercel Rewrites
 * **서버 측 대처**: `api/index.py` 내부에 FastAPI CORS 미들웨어를 장착하여 외부 브라우저의 접근을 허용했습니다.
-  ```python
-  app.add_middleware(CORSMiddleware, allow_origins=["*"], ...)
-  ```
 * **Vercel 설정 파일 ([vercel.json](file:///d:/Temp/0.코디세이/new-travel/vercel.json))**:
-  Vercel에 배포할 때, 정적 파일(HTML/JS)과 백엔드 파이썬이 동일한 도메인 아래서 마치 하나의 웹사이트처럼 동작하도록 `rewrites`를 통해 경로를 매핑시킵니다.
-  ```json
-  {
-    "rewrites": [
-      { "source": "/api/(.*)", "destination": "/api/index.py" }
-    ]
-  }
-  ```
-  이 지시문을 받으면 Vercel 서버는 브라우저가 보낸 `/api/...` 요청을 내부에서 안전하게 파이썬 `index.py`로 전달해 주기 때문에 CORS 이슈를 완벽하게 예방할 수 있습니다.
-
----
-
-## 4. LocalStorage를 활용한 클라이언트 측 영구 데이터 보존
-서버의 데이터베이스(DB)를 구축하려면 비용과 공수가 듭니다. 대신 우리는 웹 브라우저가 사용자 기기 하드디스크에 직접 저장할 수 있는 공간을 제공하는 **LocalStorage(로컬 스토리지)** 기술을 채택했습니다.
-
-### ① 로컬 스토리지의 특징
-* 서버에 트래픽을 주지 않고 브라우저가 스스로 저장하는 로컬 보관소입니다.
-* 쿠키(Cookie)와 달리 만료 기한이 없어 사용자가 수동으로 브라우저 데이터를 지우기 전까지는 영구히 유지됩니다.
-* 단, 오직 **문자열(String)** 데이터만 저장할 수 있습니다.
-
-### ② JSON 직렬화 & 역직렬화 (Serialization & Deserialization)
-우리가 만든 책 데이터는 복잡한 중첩 객체(Object)입니다. 이를 로컬 스토리지에 저장하기 위해 문자열로 변환하고, 다시 복원하는 기술을 사용합니다.
-* **직렬화 (`JSON.stringify`)**: 복잡한 책 데이터를 글자 텍스트 덩어리로 변환하여 로컬 스토리지에 밀어 넣습니다.
-  ```javascript
-  localStorage.setItem("my_travel_library", JSON.stringify(libraryArray));
-  ```
-* **역직렬화 (`JSON.parse`)**: 로컬 스토리지에서 글자 덩어리를 꺼내와 자바스크립트가 읽을 수 있는 실제 데이터 객체로 재조립합니다.
-  ```javascript
-  const library = JSON.parse(localStorage.getItem("my_travel_library"));
-  ```
+  Vercel에 배포할 때, 정적 파일(HTML/JS)과 백엔드 파이썬이 동일한 도메인 아래서 마치 하나의 웹사이트처럼 동작하도록 `routes`와 `handle: filesystem` 설정을 통해 경로를 매핑시킵니다.
+  이로써 브라우저가 보낸 `/api/...` 요청은 파이썬 백엔드로 안전하게 조율되고, 루트 주소(`/`)로 접속하면 Vercel이 서버의 파이썬보다 실제 화면 파일(`index.html`)을 1순위로 리턴해 라우팅 충돌과 CORS를 해결합니다.
 
 ---
 
