@@ -33,15 +33,13 @@ if GEMINI_API_KEY:
 # Unsplash API 설정
 UNSPLASH_ACCESS_KEY = os.environ.get("UNSPLASH_ACCESS_KEY", "")
 
-# 헬스체크용 GET 엔드포인트
+# 헬스체크용 GET 엔드포인트 (Vercel이 루트 경로의 index.html을 삼키지 않도록 @app.get("/") 삭제)
 @app.get("/api/generate")
-@app.get("/")
 async def health_check():
     return {"status": "healthy", "service": "AI Travel e-Book API"}
 
-# 메인 콘텐츠 생성 POST 엔드포인트
+# 메인 콘텐츠 생성 POST 엔드포인트 (Vercel이 루트 경로를 삼키지 않도록 @app.post("/") 삭제)
 @app.post("/api/generate")
-@app.post("/")
 async def generate_travel_book(req: TravelRequest):
     destination = req.destination.strip()
     style = req.style
@@ -92,7 +90,7 @@ async def generate_travel_book(req: TravelRequest):
 [JSON Output Schema]
 {{
   "title": "책의 메인 제목 (예: '천년의 고도, 경주 불국사를 걷다')",
-  "subtitle": "감성적인 소제목 (예: '신라의 불교 예술과 석조에 담긴 천년의 이야기')",
+  "subtitle": "감성적인 소제목 (예: '신라의 불교 예술และ 석조에 담긴 천년의 이야기')",
   "splitType": "SINGLE 또는 SERIES 중 적절한 것 선택",
   "pages": [
     {{
