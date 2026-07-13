@@ -59,7 +59,7 @@ async def health_check():
         "api_key_configured": bool(GEMINI_API_KEY)
     }
 
-# 1. 여행지 검색 및 서재 분할 판정 API (국가 ➡️ SERIES / 도시 ➡️ SINGLE 판정 고도화)
+# 1. 여행지 검색 및 서재 분할 판정 API (책꽂이 썸네일용 coverPrompt 필드 및 6~7개 후보군 구성)
 @app.post("/api/search")
 async def search_destination(req: SearchRequest):
     destination = req.destination.strip()
@@ -69,14 +69,14 @@ async def search_destination(req: SearchRequest):
     client = get_gemini_client()
 
     prompt = f"""
-여행 분석가로서, 입력된 여행지/명소인 '{destination}'의 규모를 정확하게 분석하여 서재 분할 타입(splitType)을 판정해 주세요.
+여행 분석가로서, 입력된 여행지/명소인 '{destination}'의 규모를 분석하여 서재 분할 타입(splitType)을 판정하고 도서 목록을 작성해 주세요.
 
 [중요 판정 기준]
-1. 입력어가 '국가', '대륙', 혹은 광역 행정 구역(예: 대한민국, 일본, 중국, 미국, 경상도, 전라도 등 넓은 지역)인 경우에만 'SERIES'로 판정합니다.
-   - 이 경우, 해당 국가나 구역 내에서 가볼 만한 대표적인 도시나 대규모 행정 지역들을 3~4개의 시리즈 도서 목록으로 설계해 주세요.
-   - 예: '대한민국' 입력 시 ➡️ '서울: 전통과 현대의 심장', '부산: 바다와 빛의 도시', '제주도: 화산섬의 자연과 신화' 3권의 책으로 분할 구성.
-2. 입력어가 일반적인 '도시 단위'(예: 서울, 대구, 부산, 도쿄, 뉴욕, 경주, 항저우 등)이거나 '특정 단일 명소'(예: 불국사, 석굴암, 청수사, 에펠탑 등)인 경우에는 무조건 'SINGLE'로 판정합니다.
-   - 이 경우, 해당 대상만을 다루는 단일 가이드북 1권만 목록에 넣어주세요.
+1. 입력어가 '국가', '대륙', 혹은 광역 행정 구역(예: 대한민국, 일본, 중국, 미국, 유럽, 경상도, 전라도 등 넓은 지역)인 경우에만 'SERIES'로 판정합니다.
+   - 이 경우, 해당 광역 구역 내에서 여행하기 좋은 하위 도시나 주요 대형 명소들을 **총 6~7권의 넉넉한 도서 후보 리스트**로 설계해 주세요.
+   - 예: '대한민국' 입력 시 ➡️ '서울: 전통과 현대의 심장', '부산: 바다와 빛의 도시', '제주도: 화산섬의 자연과 신화', '경주: 천년 신라의 고도', '전주: 맛과 멋의 한옥마을', '강릉: 커피와 푸른 동해 바다' 등 총 6~7권의 목록 제공.
+2. 입력어가 일반적인 '도시 단위'(예: 서울, 대구, 부산, 도쿄, 뉴욕, 경주, 항저우 등)이거나 '특정 단일 명소'(예: 불국사, 에펠탑 등)인 경우에는 무조건 'SINGLE'로 판정합니다.
+   - 이 경우, 해당 대상만을 깊이 있게 다루는 단일 가이드북 1권만 목록에 넣어주세요.
    - 예: '서울' 입력 시 ➡️ 'SINGLE' 판정, '서울: 천년의 고도와 현대의 조화' 1권의 책으로 구성.
 
 반드시 아래 제공된 JSON 포맷 스키마에 맞춰 완전한 JSON 형식으로 출력해야 합니다. JSON 텍스트 바깥에 불필요한 백틱(```json 등)이나 마크다운 텍스트는 절대 포함하지 마십시오.
@@ -90,7 +90,8 @@ async def search_destination(req: SearchRequest):
       "id": "영문 소문자와 숫자 조합의 고유 ID (예: south_korea_seoul)",
       "title": "책의 감성적인 대제목",
       "subtitle": "책의 소제목",
-      "theme": "책의 구체적 명소/주제명 (2차 책 생성 시 API 쿼리로 사용할 구체적 명칭, 예: '서울')"
+      "theme": "책의 구체적 명소/주제명 (2차 책 생성 시 API 쿼리로 사용할 구체적 명칭, 예: '서울')",
+      "coverPrompt": "이 책의 표지 및 책꽂이 카드 썸네일로 어울리는 수채화 디오라마 일러스트 묘사 영어 키워드 (예: 'water color paper-cut diorama of seoul Gyeongbokgung palace, warm palette, travel illustration, no text')"
     }}
   ]
 }}
@@ -109,7 +110,7 @@ async def search_destination(req: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"서재 구성 중 서버 오류 발생: {str(e)}")
 
-# 2. 선택된 명소의 상세 스토리 및 추천 일정 생성 API (본문 Unsplash 실사 연동)
+# 2. 선택된 명소의 상세 스토리 및 추천 일정 생성 API
 @app.post("/api/generate")
 async def generate_travel_book(req: GenerateBookRequest):
     destination = req.destination.strip()
@@ -206,7 +207,6 @@ async def generate_travel_book(req: GenerateBookRequest):
         result_data = json.loads(response.text.strip())
 
         # 4. Unsplash 실제 풍경 이미지 매칭 연동
-        # 본문 페이지는 실제 Unsplash 사진을 불러옵니다.
         for page in result_data.get("pages", []):
             query = page.get("imageSearchQuery", destination)
             image_url = get_unsplash_image(query)
@@ -229,7 +229,6 @@ def get_unsplash_image(query):
     ]
     
     if not UNSPLASH_ACCESS_KEY:
-        # 키가 없는 경우 검색어 기반의 Unsplash 오픈 이미지 주소 우회 조합
         clean_query = requests.utils.quote(query)
         return f"https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80"
         

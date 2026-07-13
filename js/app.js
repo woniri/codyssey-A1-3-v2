@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const bookshelfWrapper = document.getElementById("bookshelfWrapper");
   const booksGrid = document.getElementById("booksGrid");
   const bookshelfTitle = document.getElementById("bookshelfTitle");
+  const btnRotateShelf = document.getElementById("btnRotateShelf");
   
   const loadingContainer = document.getElementById("loadingContainer");
   const loadingMessage = document.getElementById("loadingMessage");
@@ -45,15 +46,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnBackToFormFromShelf = document.getElementById("btnBackToFormFromShelf");
 
   // 2. 전역 상태 데이터
-  let currentSearchQuery = ""; // 원본 검색어 (예: "항저우")
-  let searchResultData = null;  // 1차 search 결과 (책 목록)
-  let activeBookData = null;    // 2차 상세 스토리 생성 결과 (본문 & 일정)
-  let currentPageIndex = 0;    // 뷰어 페이지 인덱스
-  let totalPages = 0;          // 전체 페이지 개수
-  let loadingInterval = null;  // 로딩 멘트 순환용 타이머
+  let currentSearchQuery = "";     // 원본 검색어 (예: "대한민국")
+  let searchResultData = null;      // 1차 search 결과 (책 목록)
+  let activeBookData = null;        // 2차 상세 스토리 생성 결과
+  let currentPageIndex = 0;        // 뷰어 페이지 인덱스
+  let totalPages = 0;              // 전체 페이지 개수
+  let loadingInterval = null;      // 로딩 멘트 타이머
   let synth = window.speechSynthesis;
-  let utterance = null;        // TTS 인스턴스
+  let utterance = null;            // TTS
   let isPlayingAudio = false;
+
+  // 책꽂이 로테이션 상태
+  let shelfStartIndex = 0;
+  const itemsPerShelf = 4;          // 한 선반에 꽂을 기본 책 개수 (3~5개 가변 범위 내 4권 기본값 권장)
 
   // 3. 캐비닛 슬라이드 Drawer 제어
   btnOpenCabinet.addEventListener("click", () => {
@@ -65,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cabinetDrawer.classList.remove("open");
   });
 
-  // 4. 아코디언 설정 열기/닫기
+  // 4. 아코디언 설정
   btnToggleOptions.addEventListener("click", () => {
     const isOpen = optionsAccordion.classList.contains("open");
     if (isOpen) {
@@ -77,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 5. 1차 여행지 검색 (서재 분할 판정 API 호출)
+  // 5. 1차 여행지 검색
   creationForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -96,8 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     currentSearchQuery = destination;
+    shelfStartIndex = 0; // 로테이션 오프셋 리셋
 
-    // 폼 감추고 로딩 활성화
     creationCard.style.display = "none";
     loadingContainer.style.display = "flex";
     startLoadingMessages(destination, "search");
@@ -124,13 +129,11 @@ document.addEventListener("DOMContentLoaded", () => {
       stopLoadingMessages();
       loadingContainer.style.display = "none";
 
-      // ⚠️ SINGLE 판정 시 서재(책꽂이)를 건너뛰고 자동으로 상세 e-Book 엮기로 다이렉트 진입 ⚠️
       if (data.splitType === "SINGLE" && data.books && data.books.length > 0) {
         const singleBook = data.books[0];
         loadBookDetail(singleBook, style, duration, checkedThemes);
       } else {
-        // SERIES 판정 시에만 책꽂이 서재 화면 출력
-        renderBookShelf(data, style, duration, checkedThemes);
+        renderBookShelf(style, duration, checkedThemes);
       }
 
     } catch (err) {
@@ -141,26 +144,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 6. 스마트 서재(Book Shelf UI) 렌더러
-  function renderBookShelf(searchData, style, duration, themes) {
-    booksGrid.innerHTML = "";
-    bookshelfTitle.textContent = `📂 ${searchData.destination} 서재`;
+  // 6. 스마트 서재(Book Shelf) 렌더러 (로테이션 및 이미지 썸네일 노출 탑재)
+  function renderBookShelf(style, duration, themes) {
+    if (!searchResultData || !searchResultData.books) return;
     
-    searchData.books.forEach((book) => {
+    booksGrid.innerHTML = "";
+    bookshelfTitle.textContent = `📂 ${searchResultData.destination} 서재`;
+
+    const allBooks = searchResultData.books;
+    const totalBooks = allBooks.length;
+
+    // 로테이션용 슬라이스 범위 계산 (3~5권 가변)
+    // 전체 후보가 itemsPerShelf(4)보다 많으면 다른곳보기 버튼 활성화
+    if (totalBooks <= itemsPerShelf) {
+      btnRotateShelf.style.display = "none";
+    } else {
+      btnRotateShelf.style.display = "block";
+    }
+
+    // 오프셋을 기준으로 3~5권의 도서 서적을 잘라 꽂아줍니다.
+    const shelfBooks = [];
+    for (let i = 0; i < itemsPerShelf; i++) {
+      const idx = (shelfStartIndex + i) % totalBooks;
+      shelfBooks.push(allBooks[idx]);
+    }
+    
+    shelfBooks.forEach((book) => {
       const bookCard = document.createElement("div");
       bookCard.className = "shelf-book";
       
-      // 저채도 톤의 표지 등 가죽 컬러 랜덤 부여
-      const coverColors = ["#8AA399", "#D6A28C", "#AEBCC4", "#798E85"];
-      const randomColor = coverColors[Math.floor(Math.random() * coverColors.length)];
-      bookCard.style.borderLeftColor = randomColor;
+      // 책꽂이 책 표지 일러스트 썸네일 입히기 (Pollinations AI 무광 일러스트 연동)
+      const thumbPrompt = book.coverPrompt || `${book.theme} paper cut diorama`;
+      const thumbUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(thumbPrompt)}?width=130&height=190&nologo=true`;
+      
+      bookCard.style.backgroundImage = `url('${thumbUrl}')`;
 
       bookCard.innerHTML = `
         <div class="shelf-book-title">${book.title}</div>
-        <div class="shelf-book-badge">${searchData.splitType === "SERIES" ? "시리즈 도서" : "단독 도서"}</div>
+        <div class="shelf-book-badge">도서 제작</div>
       `;
 
-      // 책 클릭 시 2차 본문 상세 생성 진입
       bookCard.addEventListener("click", () => {
         loadBookDetail(book, style, duration, themes);
       });
@@ -172,17 +195,30 @@ document.addEventListener("DOMContentLoaded", () => {
     bookshelfWrapper.style.display = "flex";
   }
 
-  // 7. 2차 상세 스토리 생성 API 호출 (캐시 우선 검사 장착)
+  // 🔄 다른 곳 보기 버튼 리스너 (로테이션 오프셋 조절)
+  btnRotateShelf.addEventListener("click", () => {
+    if (!searchResultData || !searchResultData.books) return;
+    shelfStartIndex = (shelfStartIndex + itemsPerShelf) % searchResultData.books.length;
+    
+    // 현재 선택 옵션 값 복원하여 렌더링
+    const style = document.querySelector('input[name="style"]:checked').value;
+    const duration = document.getElementById("durationSelect").value;
+    const checkedThemes = [];
+    document.querySelectorAll('input[name="themes"]:checked').forEach((cb) => {
+      checkedThemes.push(cb.value);
+    });
+
+    renderBookShelf(style, duration, checkedThemes);
+  });
+
+  // 7. 2차 상세 스토리 생성 API 호출 (캐시 우선 검사)
   async function loadBookDetail(book, style, duration, themes) {
-    // ⚠️ [캐시 검사] 이미 한 번 만들었던 책인지 로컬 보관함 캐시 확인 ⚠️
     const storageKey = "my_travel_library";
     const cachedLibrary = JSON.parse(localStorage.getItem(storageKey)) || [];
     
-    // 책의 핵심 명소/주제(book.theme)가 보관함에 있는지 스캔
     const existingBook = cachedLibrary.find(b => b.destination === book.theme && b.style === style && b.duration === duration);
 
     if (existingBook) {
-      // 로컬에 이미 만들어진 책이 존재한다면 API 호출과 로딩창 없이 0.1초 만에 즉시 로드
       activeBookData = existingBook;
       creationCard.style.display = "none";
       bookshelfWrapper.style.display = "none";
@@ -190,7 +226,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 캐시가 없을 때만 API를 새로 찔러 도서 제작 진행
     bookshelfWrapper.style.display = "none";
     loadingContainer.style.display = "flex";
     startLoadingMessages(book.theme, "generate");
@@ -221,16 +256,12 @@ document.addEventListener("DOMContentLoaded", () => {
       stopLoadingMessages();
       loadingContainer.style.display = "none";
 
-      // 로컬 스토리지 보존
       saveToCabinet(bookData, style, duration);
-
-      // 책 빌딩 및 표시
       buildEbook(bookData);
 
     } catch (err) {
       stopLoadingMessages();
       loadingContainer.style.display = "none";
-      // 만약 싱글 모드에서 뒤로 왔다면 책꽂이 대신 입력 카드로 복귀 유도
       if (searchResultData && searchResultData.splitType === "SINGLE") {
         creationCard.style.display = "block";
       } else {
@@ -240,38 +271,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 8. 3D 전자책 뷰어 빌더 (표지 텍스트 제거 및 본문 Unsplash 사진 복원 적용)
+  // 8. 3D 전자책 뷰어 빌더 (양면 와이드 전면 표지 구현)
   function buildEbook(data) {
     ebook.innerHTML = "";
     currentPageIndex = 0;
 
-    // 표지(1p)는 수채화 느낌의 디오라마 일러스트를 연출하기 위해 Pollinations AI로 한 장만 넓고 깨끗하게 생성
     const coverPrompt = data.coverImagePrompt || `${data.destination} water color paper diorama travel poster`;
     const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
     
-    // 블러 배경 설정
     bgBlur.style.backgroundImage = `url('${coverImageUrl}')`;
 
     const tempPages = [];
 
-    // [페이지 1] 표지 (Cover) ⚠️ 오직 수채화 일러스트 이미지 한 장만 넓게 노출 (제목 등 텍스트 오버레이 제거)
+    // ⚠️ 양면 전면 표지 (Cover Spread) 구현 (1p Left + 2p Right 슬라이싱 결합) ⚠️
+    // 글자 없는 수채화 디오라마 이미지를 책을 펴자마자 양면 와이드로 꽉 차게 노출시킵니다.
     tempPages.push({
-      type: "cover",
+      type: "cover cover-half-left",
       html: `
-        <div class="visual-panel" style="padding: 0;">
-          <img class="visual-image" src="${coverImageUrl}" alt="${data.title}" style="filter: sepia(5%) contrast(95%);">
+        <div class="visual-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
         </div>
       `
     });
 
-    // [페이지 2 ~ 2+n] 본문 페이지 쌍 (Left: 이미지, Right: 텍스트)
+    tempPages.push({
+      type: "cover cover-half-right",
+      html: `
+        <div class="visual-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
+        </div>
+      `
+    });
+
+    // [페이지 3 ~ n] 본문 페이지 쌍 (Left: 이미지, Right: 텍스트)
     data.pages.forEach((p, idx) => {
-      // 본문 텍스트 (오른쪽 면) - 책의 대제목과 소제목은 제1장의 헤더 영역에 잘 보이도록 배치
+      // 본문 텍스트 (오른쪽 면) - 제1장 텍스트 영역 상단에 책 제목과 소제목 노출
       const titleHeaderHtml = idx === 0 
         ? `<div style="font-family: var(--font-serif); font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px; border-bottom: 1px dashed rgba(62,64,63,0.15); padding-bottom: 0.25rem;">
             ${data.title}
            </div>`
         : "";
+
+      tempPages.push({
+        type: "visual",
+        html: `
+          <div class="visual-panel">
+            <img class="visual-image" src="${p.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828'}" alt="${p.chapterTitle}">
+            <div class="visual-title">${p.chapterTitle}</div>
+            <div class="visual-credits">Photo matching via Unsplash</div>
+          </div>
+        `
+      });
 
       tempPages.push({
         type: "story",
@@ -293,19 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
       });
-
-      // 본문 삽화 (왼쪽 면) ⚠️ 백엔드에서 매칭한 Unsplash 현지 실제 풍경 실사 사진 적용 및 리터칭 필터
-      const bodyImageUrl = p.imageUrl || "https://images.unsplash.com/photo-1488646953014-85cb44e25828";
-      tempPages.push({
-        type: "visual",
-        html: `
-          <div class="visual-panel">
-            <img class="visual-image" src="${bodyImageUrl}" alt="${p.chapterTitle}">
-            <div class="visual-title">${p.chapterTitle}</div>
-            <div class="visual-credits">Photo matching via Unsplash</div>
-          </div>
-        `
-      });
     });
 
     // [일정 페이지]
@@ -321,6 +356,18 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       });
 
+      // 좌측 이미지면 생성 (일정의 풍경 느낌을 대변할 실사 Unsplash 기본 사진 배치)
+      tempPages.push({
+        type: "visual",
+        html: `
+          <div class="visual-panel">
+            <img class="visual-image" src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80" alt="Travel Timeline">
+            <div class="visual-title">추천 일정: Day ${dayPlan.day}</div>
+            <div class="visual-credits">Itinerary Road Map</div>
+          </div>
+        `
+      });
+
       tempPages.push({
         type: "itinerary",
         html: `
@@ -334,7 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // 짝수 보정
+    // 짝수 페이지 맞춤 보정
     if (tempPages.length % 2 !== 0) {
       tempPages.push({
         type: "backcover",
@@ -352,9 +399,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const pageDiv = document.createElement("div");
       
       if (index % 2 === 0) {
-        pageDiv.className = `page page-left ${page.type === "cover" ? "book-cover" : "book-inside"}`;
+        pageDiv.className = `page page-left ${page.type.includes("cover") ? "book-cover" : "book-inside"} ${page.type}`;
       } else {
-        pageDiv.className = `page page-right ${page.type === "backcover" ? "book-cover" : "book-inside"}`;
+        pageDiv.className = `page page-right ${page.type.includes("backcover") ? "book-cover" : "book-inside"} ${page.type}`;
       }
 
       if (page.audioText) {
@@ -447,15 +494,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // 10. 로딩 메시지 순환
   function startLoadingMessages(dest, mode) {
     const searchMessages = [
-      `"${dest}" 여행지를 정밀 분석하는 중... 🗺️`,
-      `서재의 책꽂이에 알맞은 가이드북을 찾고 있습니다... 📖`,
-      `도서 정리 정돈을 진행 중입니다... 🧹`
+      `"${dest}" 여행지를 분석하는 중... 🗺️`,
+      `서재 책꽂이에 가이드북을 찾고 있습니다... 📖`,
+      `책꽂이 정돈 중... 🧹`
     ];
 
     const generateMessages = [
-      `"${dest}" 가이드북을 제본하는 중... ✍️`,
+      `"${dest}" 가이드북을 만드는 중... ✍️`,
       `역사적 비하인드 스토리 팩트 검증 중... 🏛️`,
-      `수채화 디오라마 화풍의 표지 일러스트를 그리는 중... 🎨`,
+      `수채화 디오라마 화풍의 양면 표지를 그리는 중... 🎨`,
       `내레이터 Cherry가 낭독 준비를 하고 있습니다... 🍒`,
       `책장 마감 및 배치가 완료 중입니다... 📚`
     ];
@@ -477,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 11. 로컬 스토리지 책 보관함 제어
+  // 11. 로컬 스토리지 책 보관함 제어 (개별 삭제 단추 탑재 및 전파 차단)
   function saveToCabinet(bookData, style, duration) {
     try {
       const storageKey = "my_travel_library";
@@ -531,8 +578,25 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="cabinet-title">${book.title}</div>
           <div class="cabinet-meta">${book.destination} | ${book.duration} (${book.savedAt})</div>
         </div>
+        <!-- 개별 삭제 버튼 추가 -->
+        <button class="btn-delete-card" title="보관함에서 삭제">×</button>
       `;
 
+      // ⚠️ 삭제 단추 클릭 이벤트 (이벤트 버블링 차단 및 삭제 로직) ⚠️
+      const btnDelete = card.querySelector(".btn-delete-card");
+      btnDelete.addEventListener("click", (evt) => {
+        evt.stopPropagation(); // 부모 카드 클릭 이벤트 전파 차단!
+        
+        let currentLibrary = JSON.parse(localStorage.getItem(storageKey)) || [];
+        // 해당 도서 필터링 삭제
+        currentLibrary = currentLibrary.filter(b => b.title !== book.title);
+        localStorage.setItem(storageKey, JSON.stringify(currentLibrary));
+        
+        // 보관함 목록 리렌더링
+        loadCabinetList();
+      });
+
+      // 카드 클릭 시 도서 즉시 열기
       card.addEventListener("click", () => {
         activeBookData = book;
         cabinetDrawer.classList.remove("open");
@@ -787,6 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
         textToSpeak = itiPanel.textContent;
       }
     } else {
+      // ⚠️ 표지 스프레드가 1~2p로 양면 와이드화 됨에 따라 낭독 시작 페이지는 제3페이지(인덱스 2 또는 3) 텍스트 면이 됩니다.
       const rightPageIndex = currentPageIndex + 1;
       const rightPage = pages[rightPageIndex];
       const audioText = rightPage?.getAttribute("data-audio-text");
@@ -885,7 +950,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnBackToForm.addEventListener("click", () => {
     stopAudio();
-    // 싱글 모드였을 경우 책꽂이 단계가 존재하지 않으므로, 책꽂이를 거치지 않고 다이렉트로 홈 폼 화면으로 복원
     if (searchResultData && searchResultData.splitType === "SINGLE") {
       resetToHome();
     } else {

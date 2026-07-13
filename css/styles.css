@@ -16,6 +16,7 @@
   --color-accent: #AEBCC4;      /* 공기감 있는 담청색 */
   --color-card-bg: #FFFFFF;     /* 종이 면 백색 */
   --color-wood: #D3B499;        /* 책꽂이 나무 색 */
+  --color-danger: #D9534F;      /* 삭제 경고 색 */
   
   /* 폰트 토큰 */
   --font-serif: 'Maru Buri', 'Nanum Myeongjo', serif;
@@ -54,7 +55,7 @@ body {
   position: relative;
 }
 
-/* 흐릿한 배경 레이어 (글래스모피즘 분위기 연출용) */
+/* 흐릿한 배경 레이어 */
 .bg-blur-container {
   position: fixed;
   top: 0;
@@ -175,7 +176,6 @@ main {
   box-shadow: var(--shadow-layered);
 }
 
-/* 둥실둥실 부유하는 오린 종이 데코 */
 .deco-objects {
   position: absolute;
   top: 0;
@@ -288,7 +288,6 @@ main {
   box-shadow: 0 0 0 3px rgba(138, 163, 153, 0.2);
 }
 
-/* 드롭다운 스타일링 */
 .select-wrapper {
   position: relative;
   width: 100%;
@@ -324,7 +323,6 @@ main {
   pointer-events: none;
 }
 
-/* 아코디언 설정 */
 .accordion-toggle {
   display: flex;
   align-items: center;
@@ -447,14 +445,13 @@ main {
   margin-bottom: 0.4rem;
 }
 
-/* 책장 그래픽 연출 */
 .shelf-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 850px;
   position: relative;
-  padding: 2rem 2rem 0.6rem 2rem;
+  padding: 2.5rem 2.5rem 0.6rem 2.5rem;
   background-color: rgba(255, 255, 255, 0.35);
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px 24px 0 0;
   border: 1px solid rgba(62, 64, 63, 0.05);
   box-shadow: var(--shadow-paper);
   margin-bottom: 2rem;
@@ -473,68 +470,103 @@ main {
 
 .books-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 2.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1.5rem;
   justify-items: center;
-  padding-bottom: 12px; /* 선반 나무 바로 위에 얹히도록 */
+  padding-bottom: 12px;
+  width: 100%;
 }
 
-/* 책꽂이에 꽂힌 3D 감성 책 카드 */
+/* 3D 책 카드 썸네일 노출 */
 .shelf-book {
-  width: 150px;
-  height: 220px;
+  width: 130px;
+  height: 190px;
   background-color: var(--color-card-bg);
-  border-radius: 4px 10px 10px 4px;
-  box-shadow: -8px 8px 16px rgba(62,64,63,0.25), 
-              inset 8px 0 8px rgba(0,0,0,0.05);
+  border-radius: 4px 8px 8px 4px;
+  box-shadow: -6px 6px 12px rgba(62,64,63,0.22), 
+              inset 6px 0 6px rgba(0,0,0,0.05);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 1.25rem 1rem;
-  border-left: 6px solid var(--color-secondary); /* 책 등 가죽 느낌 */
+  padding: 1.1rem 0.85rem;
+  border-left: 5px solid var(--color-secondary);
   transition: var(--transition-smooth);
   position: relative;
   overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
 }
 
-.shelf-book::before {
+/* 은은한 이미지 오버레이 배경 마스크 */
+.shelf-book::after {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to right, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.03) 8%, rgba(255,255,255,0.1) 12%, rgba(0,0,0,0.05) 100%);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.88) 100%);
+  z-index: -1;
   pointer-events: none;
+  transition: var(--transition-smooth);
+}
+
+.shelf-book:hover::after {
+  background: linear-gradient(to bottom, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.78) 100%);
 }
 
 .shelf-book:hover {
-  transform: translateY(-15px) scale(1.03);
-  box-shadow: -15px 20px 25px rgba(62,64,63,0.3);
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: -12px 16px 22px rgba(62,64,63,0.28);
   border-left-color: var(--color-primary);
 }
 
 .shelf-book-title {
   font-family: var(--font-serif);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--text-charcoal);
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8);
 }
 
 .shelf-book-badge {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  background-color: var(--bg-eggshell);
-  padding: 0.2rem 0.5rem;
-  border-radius: 10px;
+  background-color: rgba(255,255,255,0.9);
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
   align-self: flex-start;
   color: var(--text-muted);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* 로테이션 및 기타 버튼 */
+.btn-rotate-shelf {
+  padding: 0.7rem 1.5rem;
+  border-radius: 20px;
+  border: 1px solid var(--color-primary);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-flat);
+  transition: var(--transition-smooth);
+}
+
+.btn-rotate-shelf:hover {
+  background-color: #798E85;
+  border-color: #798E85;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-paper);
 }
 
 .btn-back-shelf {
@@ -610,7 +642,7 @@ main {
 .book-container {
   width: 85vw;
   max-width: 1100px;
-  aspect-ratio: 16 / 9; /* 가변 종횡비 박스 */
+  aspect-ratio: 16 / 9;
   perspective: 2000px;
   margin-bottom: 2.5rem;
   position: relative;
@@ -664,6 +696,17 @@ main {
   transform-origin: left center;
 }
 
+/* ⚠️ 양면 와이드 전면 표지 (Cover Split) 슬라이싱 기법 ⚠️ */
+.cover-half-left {
+  background-size: 200% 100% !important;
+  background-position: left center !important;
+}
+
+.cover-half-right {
+  background-size: 200% 100% !important;
+  background-position: right center !important;
+}
+
 .book-cover {
   z-index: 10;
 }
@@ -682,7 +725,7 @@ main {
   backface-visibility: hidden;
 }
 
-/* 이미지 패널 리터칭 CSS 필터 적용 */
+/* 이미지 패널 */
 .visual-panel {
   width: 100%;
   height: 100%;
@@ -692,6 +735,8 @@ main {
   padding: 2.5rem;
   position: relative;
   overflow: hidden;
+  background-size: cover;
+  background-position: center;
 }
 
 .visual-image {
@@ -702,7 +747,6 @@ main {
   height: 100%;
   object-fit: cover;
   z-index: 1;
-  /* 무광 종이 엽서 효과를 위한 리터칭 필터 */
   filter: sepia(12%) contrast(92%) brightness(103%);
   transition: var(--transition-smooth);
 }
@@ -964,7 +1008,6 @@ main {
   user-select: none;
 }
 
-/* 파일 다운로드 단추 */
 .btn-download {
   background: none;
   border: none;
@@ -1047,7 +1090,7 @@ main {
   gap: 1rem;
 }
 
-/* 보관함 내 개별 도서 썸네일 카드 */
+/* 보관함 카드 */
 .cabinet-card {
   display: flex;
   gap: 0.75rem;
@@ -1057,6 +1100,7 @@ main {
   border: 1px solid rgba(62,64,63,0.06);
   cursor: pointer;
   transition: var(--transition-smooth);
+  position: relative;
 }
 
 .cabinet-card:hover {
@@ -1078,6 +1122,7 @@ main {
   flex-direction: column;
   justify-content: center;
   flex: 1;
+  padding-right: 1.5rem; /* 삭제 버튼 영역 확보 */
 }
 
 .cabinet-title {
@@ -1095,6 +1140,32 @@ main {
 .cabinet-meta {
   font-size: 0.7rem;
   color: var(--text-muted);
+}
+
+/* ⚠️ 삭제 단추 스타일링 ⚠️ */
+.btn-delete-card {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(62,64,63,0.08);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: var(--transition-smooth);
+}
+
+.btn-delete-card:hover {
+  background-color: var(--color-danger);
+  color: #FFFFFF;
 }
 
 /* 11. 에러 알림 모달 */
@@ -1175,17 +1246,17 @@ main {
 }
 
 /* ==========================================================================
-   12. 반응형 미디어 쿼리 (Responsive Grid System)
+   12. 반응형 미디어 쿼리
    ========================================================================== */
 
-/* 태블릿 이하 (가로 1024px 이하) */
+/* 태블릿 이하 */
 @media (max-width: 1024px) {
   .book-container {
     width: 90vw;
   }
 }
 
-/* 모바일 (가로 768px 이하) - 양면 펼침에서 1면 카드 세로 뷰로 전환 */
+/* 모바일 */
 @media (max-width: 768px) {
   header {
     padding: 1.5rem 1rem 0.5rem 1rem;
@@ -1207,7 +1278,6 @@ main {
     font-size: 1.7rem;
   }
 
-  /* 모바일 카드 세로 뷰로 변형 */
   .book-container {
     width: 95vw;
     height: auto;
@@ -1258,9 +1328,15 @@ main {
     font-size: 0.95rem;
     margin: 1rem 0;
   }
+  
+  /* 모바일 와이드 표지 해제 대응 */
+  .cover-half-left, .cover-half-right {
+    background-size: cover !important;
+    background-position: center !important;
+  }
 }
 
-/* 아주 작은 모바일 기기 (480px 이하) */
+/* 아주 작은 모바일 기기 */
 @media (max-width: 480px) {
   .creation-card {
     padding: 1.25rem;

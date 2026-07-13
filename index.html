@@ -44,7 +44,7 @@
         <!-- 여행지 입력 -->
         <div class="form-group">
           <label for="destination">어디로 떠나고 싶으신가요? (필수)</label>
-          <input type="text" id="destination" class="input-text" placeholder="예: 경주, 항저우, 서울, 제주도, 도쿄" required autocomplete="off">
+          <input type="text" id="destination" class="input-text" placeholder="예: 대한민국, 서울, 도쿄, 일본" required autocomplete="off">
         </div>
 
         <!-- 아코디언 설정 버튼 -->
@@ -75,7 +75,7 @@
               </div>
             </div>
 
-            <!-- 여행 일정 설정 (드롭다운으로 확장) -->
+            <!-- 여행 일정 설정 -->
             <div class="form-group">
               <label for="durationSelect">추천 일정 기간</label>
               <div class="select-wrapper">
@@ -89,7 +89,7 @@
               </div>
             </div>
 
-            <!-- 관심 테마 설정 (8개 확장) -->
+            <!-- 관심 테마 설정 -->
             <div class="form-group">
               <label>나의 주요 여행 테마 (중복 가능)</label>
               <div class="checkbox-group">
@@ -143,7 +143,7 @@
         <p class="subtitle">이 구역에서 제작 가능한 가이드북 리스트입니다. 읽고 싶은 책을 골라 펼쳐보세요.</p>
       </div>
 
-      <!-- 책꽂이 그래픽 그리드 -->
+      <!-- 책장 그래픽 그리드 -->
       <div class="shelf-container">
         <div class="shelf-wood"></div>
         <div class="books-grid" id="booksGrid">
@@ -151,9 +151,15 @@
         </div>
       </div>
 
-      <button type="button" class="btn-back-shelf" id="btnBackToFormFromShelf">
-        ◀ 검색 화면으로 돌아가기
-      </button>
+      <!-- 다른 곳 보기 로테이션 및 뒤로가기 버튼 정렬 -->
+      <div class="shelf-controls" style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <button type="button" class="btn-rotate-shelf" id="btnRotateShelf">
+          🔄 다른 도시/명소 보기
+        </button>
+        <button type="button" class="btn-back-shelf" id="btnBackToFormFromShelf" style="margin-top: 0;">
+          ◀ 검색 화면으로 돌아가기
+        </button>
+      </div>
     </section>
 
     <!-- 3. 생성 중 로딩 상태 표시 -->
@@ -163,7 +169,7 @@
       <p class="loading-subtext">AI가 역사적 전설을 검증하고, 종이 공예 감성의 삽화를 실시간으로 깎아내어 그리고 있습니다.</p>
     </section>
 
-    <!-- 4. 생성 완료 후 e-Book 뷰어 화면 (데스크톱 가변 비율) -->
+    <!-- 4. 생성 완료 후 e-Book 뷰어 화면 -->
     <section class="book-wrapper" id="bookWrapper">
       <div class="book-container">
         <div class="book" id="ebook">
@@ -190,7 +196,6 @@
             <button class="btn-audio" id="btnPlayAudio" title="재생">▶</button>
             <button class="btn-audio" id="btnStopAudio" title="정지">⏹</button>
             <span class="divider">|</span>
-            <!-- 다운로드 버튼 추가 -->
             <button class="btn-download" id="btnDownloadBook" title="소장용 HTML 가이드북 다운로드">
               💾 다운로드
             </button>
