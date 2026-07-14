@@ -262,7 +262,7 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
                 
                 config = types.GenerateContentConfig(
                     temperature=0.7,
-                    http_options={"timeout": 4.5}
+                    http_options={"timeout": 5}
                 )
                 if response_mime_type:
                     config.response_mime_type = response_mime_type
@@ -307,12 +307,12 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
                 try:
                     if response_mime_type == "application/json":
                         payload["response_format"] = {"type": "json_object"}
-                    res = requests.post(p["url"], headers=headers, json=payload, timeout=4.5)
+                    res = requests.post(p["url"], headers=headers, json=payload, timeout=5)
                     res.raise_for_status()
                 except Exception as format_err:
                     if "response_format" in payload:
                         del payload["response_format"]
-                        res = requests.post(p["url"], headers=headers, json=payload, timeout=4.5)
+                        res = requests.post(p["url"], headers=headers, json=payload, timeout=5)
                         res.raise_for_status()
                     else:
                         raise format_err
@@ -509,7 +509,7 @@ async def generate_travel_book(req: GenerateBookRequest):
     - **[Scene]**: A warm cream paper card showing a hand-drawn route map of '{destination}'. Connect timeline locations (e.g. the places in timeline) with simple dashed lines. Accent the card with ticket stubs, postage stamps, masking tape, and receipts to look like a page from a travel note.
     - **[Style]**: Map postcard illustration combined with scrapbook collage. Use thin ink lines, watercolor texture, cream/beige/terracotta color palette, retro stamp details.
     - **[Composition]**: 1536x1024 landscape card layout. Route map in the center, title "Route Map" on top, stamp on top right, travel note box on bottom right.
-    - **[Text]**: Explicitly mention text to include in English: Title: '{destination} finds', subtitle: 'Day {day} route', labels for places (insert the timeline place names in English), postmark: '{destination}', note title: 'TRAVEL NOTE' with a small summary sentence.
+    - **[Text]**: Explicitly mention text to include in English: Title: '{destination} finds', subtitle: 'Day {{day}} route', labels for places (insert the timeline place names in English), postmark: '{destination}', note title: 'TRAVEL NOTE' with a small summary sentence.
 
 반드시 아래 제공된 JSON 포맷 스키마에 맞춰 완전한 JSON 형식으로 출력해야 합니다. JSON 텍스트 바깥에 불필요한 백틱(```json 등)이나 마크다운 텍스트는 절대 포함하지 마십시오.
 
