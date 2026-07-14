@@ -1,0 +1,21 @@
+# Reference Images
+images/여행지도.png
+images/전체느낌.png
+images/여행지도.png
+images/전체느낌.png
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local environment variables
+.env

@@ -1351,3 +1351,415 @@ main {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   13. 빈티지 스크랩북 & 아날로그 여정 지도 (전체느낌.png & 여행지도.png 매칭)
+   ========================================================================== */
+
+/* 웹사이트 전체 브랜딩 컬러 및 타이포 필터링 */
+h1, h2, h3, .cover-main-title {
+  font-family: var(--font-serif);
+}
+
+.option-btn, .btn-submit, .btn-rotate-shelf, .btn-cabinet {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-submit:hover, .btn-rotate-shelf:hover, .btn-cabinet:hover {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+/* 1) 양면 와이드 표지 텍스트 레이아웃 */
+.cover-text-left {
+  position: absolute;
+  bottom: 12%;
+  left: 10%;
+  color: var(--text-charcoal);
+  text-align: left;
+  z-index: 5;
+  background-color: rgba(250, 246, 240, 0.9);
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-layered);
+  max-width: 80%;
+  border-left: 6px solid var(--color-secondary);
+}
+
+.cover-main-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-charcoal);
+  line-height: 1.2;
+}
+
+.cover-sub-title {
+  font-size: 1rem;
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+.cover-text-right {
+  position: absolute;
+  bottom: 12%;
+  right: 10%;
+  text-align: right;
+  z-index: 5;
+  background-color: rgba(250, 246, 240, 0.9);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  color: var(--text-charcoal);
+  box-shadow: var(--shadow-layered);
+}
+
+.cover-author-tag {
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.cover-year-tag {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  color: var(--color-secondary);
+}
+
+/* 2) 폴라로이드 감성 스크랩북 이미지 패널 (Left Page) */
+.scrapbook-visual-panel-bg {
+  background-color: #F5EFEB !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem !important;
+  position: relative;
+}
+
+.photo-card-wrap {
+  background-color: #ffffff;
+  padding: 12px 12px 36px 12px;
+  box-shadow: 0 10px 25px rgba(62,64,63,0.15);
+  transform: rotate(-2.5deg);
+  width: 85%;
+  max-width: 320px;
+  position: relative;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.photo-tape-top {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%) rotate(1deg);
+  width: 70px;
+  height: 20px;
+  background-color: rgba(235, 220, 150, 0.45);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  z-index: 10;
+}
+
+.scrapbook-photo {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  position: relative !important;
+  filter: sepia(10%) contrast(94%) brightness(102%) !important;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.photo-caption {
+  font-family: 'Nanum Pen Script', 'Reenie Beanie', cursive;
+  font-size: 1.6rem;
+  color: #555555;
+  text-align: center;
+  margin-top: 12px;
+  line-height: 1.2;
+  user-select: none;
+}
+
+/* 3) 빈티지 아날로그 지도 패널 (itinerary-map-panel) */
+.map-panel-container {
+  background: radial-gradient(circle, #fbf9f4 0%, #ebdfc5 100%) !important;
+  padding: 1.5rem !important;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(150, 130, 110, 0.15);
+}
+
+.map-panel-title {
+  position: absolute;
+  bottom: 12px;
+  left: 20px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.2rem;
+  color: rgba(130, 100, 80, 0.6);
+  font-weight: 700;
+}
+
+/* 보딩패스 티켓 스타일 */
+.vintage-ticket-stub {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background-color: #ebdcb9;
+  border: 1px dashed rgba(130, 90, 70, 0.35);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: 'Pretendard', sans-serif;
+  color: #6d5b4a;
+  transform: rotate(-4deg);
+  box-shadow: 2px 4px 8px rgba(0,0,0,0.06);
+  z-index: 5;
+  max-width: 130px;
+}
+
+.stub-header {
+  font-size: 0.55rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(130, 90, 70, 0.2);
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.stub-dest-code {
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-secondary);
+}
+
+.stub-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.5rem;
+  margin-top: 3px;
+  opacity: 0.8;
+}
+
+.stub-date {
+  font-size: 0.5rem;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+/* 빈티지 우표 및 소인 */
+.vintage-stamp {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  z-index: 5;
+  transform: rotate(5deg);
+}
+
+.stamp-inner {
+  background-color: #f7eed8;
+  border: 2px dotted #c3b59b;
+  width: 44px;
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+  box-shadow: 1px 3px 6px rgba(0,0,0,0.08);
+}
+
+.stamp-image-emblem {
+  font-size: 1.2rem;
+}
+
+.stamp-txt {
+  font-size: 0.45rem;
+  font-weight: 700;
+  color: #927b66;
+}
+
+.postmark-circle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 55px;
+  height: 55px;
+  border: 1px dashed rgba(110, 80, 60, 0.35);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+
+.postmark-text {
+  font-size: 0.45rem;
+  font-weight: 700;
+  color: rgba(110, 80, 60, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.postmark-date {
+  font-size: 0.35rem;
+  color: rgba(110, 80, 60, 0.4);
+  margin-top: 1px;
+}
+
+/* 수기 여행 노트 */
+.vintage-travel-note {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background-color: #fefdfa;
+  border: 1px solid rgba(130, 90, 70, 0.15);
+  box-shadow: 2px 6px 12px rgba(62,64,63,0.1);
+  padding: 10px 12px;
+  width: 145px;
+  transform: rotate(1.5deg);
+  z-index: 5;
+}
+
+.vintage-travel-note::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(138, 163, 153, 0.08) 1px, transparent 1px);
+  background-size: 100% 16px;
+  pointer-events: none;
+}
+
+.note-title {
+  font-family: 'Caveat', cursive;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: var(--color-secondary);
+  border-bottom: 1px solid rgba(130, 90, 70, 0.15);
+  padding-bottom: 2px;
+  margin-bottom: 6px;
+}
+
+.note-content {
+  font-family: 'Nanum Pen Script', cursive;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  color: #4a423a;
+}
+
+.tape-corner {
+  position: absolute;
+  width: 35px;
+  height: 12px;
+  background-color: rgba(235, 220, 150, 0.35);
+  z-index: 10;
+}
+
+.tape-top-left {
+  top: -6px;
+  left: -12px;
+  transform: rotate(-35deg);
+}
+
+.tape-bottom-right {
+  bottom: -6px;
+  right: -12px;
+  transform: rotate(-35deg);
+}
+
+/* SVG 아날로그 지도 스타일 */
+.vintage-route-map {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  margin: auto;
+  z-index: 2;
+}
+
+.map-node-label {
+  font-family: 'Nanum Pen Script', cursive;
+  font-size: 1.2rem;
+  fill: #4e4034;
+  font-weight: 500;
+  text-shadow: 0 1px 2px #fff, 0 -1px 2px #fff;
+}
+
+.map-node-time {
+  font-family: 'Caveat', cursive;
+  font-size: 0.95rem;
+  font-weight: bold;
+  fill: var(--color-secondary);
+}
+
+/* 모바일 전용 스타일 덮어쓰기 */
+@media (max-width: 768px) {
+  .scrapbook-visual-panel-bg {
+    padding: 1rem !important;
+  }
+  .photo-card-wrap {
+    width: 90%;
+    padding: 10px 10px 24px 10px;
+  }
+  .photo-caption {
+    font-size: 1.3rem;
+  }
+  .map-panel-container {
+    height: 380px !important;
+  }
+  .vintage-ticket-stub {
+    top: 10px;
+    left: 10px;
+    padding: 4px 6px;
+    max-width: 100px;
+  }
+  .stub-dest-code {
+    font-size: 1rem;
+  }
+  .vintage-stamp {
+    top: 10px;
+    right: 10px;
+  }
+  .stamp-inner {
+    width: 32px;
+    height: 38px;
+    padding: 2px;
+  }
+  .stamp-image-emblem {
+    font-size: 0.8rem;
+  }
+  .postmark-circle {
+    display: none; /* 모바일 화면에서는 생략하여 겹침 방지 */
+  }
+  .vintage-travel-note {
+    bottom: 10px;
+    right: 10px;
+    width: 120px;
+    padding: 6px 8px;
+  }
+  .note-content {
+    font-size: 1rem;
+  }
+  .vintage-route-map {
+    max-height: 180px;
+  }
+  .cover-text-left {
+    bottom: 8%;
+    left: 5%;
+    padding: 1rem;
+    max-width: 90%;
+  }
+  .cover-main-title {
+    font-size: 1.6rem;
+  }
+  .cover-text-right {
+    display: none; /* 모바일에서는 생략 */
+  }
+}
+

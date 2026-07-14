@@ -127,14 +127,14 @@ async def generate_travel_book(req: GenerateBookRequest):
     theme_str = ", ".join(themes) if themes else "일반 역사 및 문화"
     
     style_instruction = ""
-    if style == "cherry":
-        style_instruction = "친근하고 다정한 로컬 전문가 '🍒체리'의 구어체 가이드 톤 (지적이고 세련된 경어체 사용, 이모지는 적절히만 사용)"
-    elif style == "expert":
-        style_instruction = "정중하고 지적이며 깊이 있는 역사 해설자의 전통 학술 가이드 톤"
-    elif style == "kids":
-        style_instruction = "아이들의 상상력을 자극하는 쉽고 재미있는 구어체 동화 이야기꾼 톤"
+    if style == "kimyoungha":
+        style_instruction = "소설가 김영하의 문체 (이성적이고 현대적이며, 감각적인 통찰이 돋보이는 도시 산문체. 세련된 문장, 여행자로서의 깊은 자아 성찰과 관찰이 돋보이는 톤앤매너)"
+    elif style == "haruki":
+        style_instruction = "소설가 무라카미 하루키의 문체 (재즈, 위스키, 시니컬하면서도 쓸쓸한 독백이 섞인 현대 서사체. 특유의 은유와 일인칭 시점의 독특한 감성, 조금은 건조하지만 흡입력 있는 문체)"
+    elif style == "hesse":
+        style_instruction = "문학가 헤르만 헤세의 문체 (자연에 대한 찬미, 자아 성찰, 고전적이고 절제된 낭만주의 문체. 서정적이고 아름다운 자연/도시 묘사와 영혼의 순례자 같은 철학적 성찰이 가미된 톤앤매너)"
     else:
-        style_instruction = "다정하고 깊이 있는 현지 전문가 스토리텔러 톤"
+        style_instruction = "이성적이고 감성적인 통찰이 돋보이는 여행 문학 산문체"
 
     prompt = f"""
 역사학자이자 감성적인 여행 도서관 사서로서, 아래 조건에 맞춰 대상 여행지의 가이드 e-Book 스토리와 시간대별 일정을 완성해 주세요.
@@ -147,11 +147,11 @@ async def generate_travel_book(req: GenerateBookRequest):
 - 주요 관심 테마: {theme_str}
 
 [스토리텔링 제약 규칙]
-- 책 본문(pages)은 반드시 총 4페이지로 구성합니다. 각 페이지는 역사적 전설, 숨겨진 비화, 문화적 배경 등 깊이 있는 정보를 제공하되 백과사전식 나열이 아닌 시적이고 세련된 스토리로 채워주세요.
+- 책 본문(pages)은 반드시 총 4페이지로 구성합니다. 각 페이지는 역사적 전설, 숨겨진 비화, 문화적 배경 등 깊이 있는 정보를 제공하되 백과사전식 나열이 아닌 선택된 작가의 문체 특징을 고스란히 살려 시적이고 세련된 스토리로 채워주세요.
 - 각 페이지당 storyText는 한국어 기준 200~300자 내외입니다.
 - audioText는 낭독용입니다. 특수문자, 이모지, 괄호를 제외하고 한국어로 물 흐르듯 자연스럽게 낭독되도록 정돈해 주세요.
-- 표지용 일러스트 프롬프트는 수채화 느낌의 무광 종이 디오라마(water color paper-cut diorama illustration) 스타일로 영어로 작성해 주세요.
-  (예: 'water color paper-cut diorama of Gyeongju, warm palette, matte paper texture, soft studio lighting, sharp borders, travel poster illustration, no text')
+- 표지용 일러스트 프롬프트는 따뜻하고 감성적인 플랫 벡터 여행 포스터 일러스트(flat vector cozy travel poster illustration, minimal line art style, warm pastel color palette with cream, terracotta and light blue, aesthetic composition, highly detailed, no text) 스타일로 영어로 작성해 주세요.
+  (예: 'flat vector cozy travel poster illustration of Gyeongju, warm pastel color palette with cream and terracotta, minimal line art, serene landscape, aesthetic composition, highly detailed, no text')
 - 본문 1~4장의 이미지 검색용 영어 키워드는 해당 페이지에 수록될 관광지 풍경 실사 사진을 Unsplash에서 검색할 수 있는 구체적인 실제 키워드로 영어로 적어주세요.
   (예: 'Gyeongju Bulguksa temple autumn view')
 
@@ -167,7 +167,7 @@ async def generate_travel_book(req: GenerateBookRequest):
   "title": "책의 감성적인 메인 제목 (예: '달빛 아래 속삭이는 서호의 백사 전설')",
   "subtitle": "책의 소제목 (예: '시인 소동파와 전설적인 신화가 빚어낸 항저우의 심장')",
   "destination": "{destination}",
-  "coverImagePrompt": "표지용 수채화 디오라마 일러스트 묘사 영어 키워드 (예: 'water color paper-cut diorama of seoul skyline')",
+  "coverImagePrompt": "표지용 플랫 벡터 일러스트 묘사 영어 키워드 (예: 'flat vector cozy travel poster illustration of seoul skyline, warm pastel color palette')",
   "pages": [
     {{
       "pageNumber": 1,
@@ -228,9 +228,10 @@ def get_unsplash_image(query):
         "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"
     ]
     
+    clean_query = requests.utils.quote(query)
     if not UNSPLASH_ACCESS_KEY:
-        clean_query = requests.utils.quote(query)
-        return f"https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80"
+        # Unsplash의 키가 없을 때 고정된 단일 이미지 대신 키워드에 따른 동적 대표 이미지 서비스 활용
+        return f"https://images.unsplash.com/featured/1200x900/?{clean_query}"
         
     try:
         url = "https://api.unsplash.com/search/photos"
@@ -250,5 +251,6 @@ def get_unsplash_image(query):
     except Exception:
         pass
         
-    import random
-    return random.choice(default_images)
+    # 만약 검색에 실패할 경우 키워드 기반의 featured 이미지 혹은 기본 목록 중 랜덤 선택
+    return f"https://images.unsplash.com/featured/1200x900/?{clean_query}"
+

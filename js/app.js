@@ -55,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let synth = window.speechSynthesis;
   let utterance = null;            // TTS
   let isPlayingAudio = false;
+  let ambientAudio = null;         // ASMR 배경음용 Audio 객체
 
   // 책꽂이 로테이션 상태
   let shelfStartIndex = 0;
@@ -271,24 +272,84 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 8. 3D 전자책 뷰어 빌더 (양면 와이드 전면 표지 구현)
+  // 8. 빈티지 아날로그 지도 SVG 렌더러 (여행지도.png 기반)
+  function generateSvgRouteMap(timeline, destination) {
+    if (!timeline || timeline.length === 0) return "";
+    
+    // 320x200 뷰박스 기준 노드 좌표
+    const coords = [
+      { x: 60, y: 130 },
+      { x: 130, y: 50 },
+      { x: 210, y: 130 },
+      { x: 275, y: 65 }
+    ];
+    
+    let pathD = "";
+    let nodesHtml = "";
+    
+    timeline.forEach((item, index) => {
+      const pt = coords[index] || { x: 50 + index * 70, y: 80 };
+      if (index === 0) {
+        pathD += `M ${pt.x} ${pt.y}`;
+      } else {
+        pathD += ` L ${pt.x} ${pt.y}`;
+      }
+      
+      nodesHtml += `
+        <g class="map-node">
+          <!-- 연결 노드 원형 및 그림자 -->
+          <circle cx="${pt.x}" cy="${pt.y}" r="8" fill="var(--color-secondary)" stroke="#fff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(62,64,63,0.25));" />
+          <circle cx="${pt.x}" cy="${pt.y}" r="3" fill="#fff" />
+          <!-- 시간대 및 장소명 라벨 -->
+          <text x="${pt.x}" y="${pt.y - 12}" text-anchor="middle" class="map-node-time">${item.time}</text>
+          <text x="${pt.x}" y="${pt.y + 24}" text-anchor="middle" class="map-node-label">${item.place}</text>
+        </g>
+      `;
+    });
+    
+    return `
+      <svg viewBox="0 0 320 200" class="vintage-route-map">
+        <defs>
+          <pattern id="mapGrid" width="16" height="16" patternUnits="userSpaceOnUse">
+            <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(62,64,63,0.03)" stroke-width="0.7"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#mapGrid)" rx="6" />
+        
+        <!-- 실선 도로 그리드 형상화 데코 -->
+        <path d="M 20 40 L 300 40 M 40 100 L 280 100 M 20 160 L 300 160 M 80 10 L 80 190 M 160 10 L 160 190 M 240 10 L 240 190" fill="none" stroke="rgba(62,64,63,0.04)" stroke-width="1" />
+        
+        <!-- 경로 연결 선 -->
+        <path d="${pathD}" fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-dasharray="6,6" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));" />
+        
+        ${nodesHtml}
+      </svg>
+    `;
+  }
+
+  // 8. 3D 전자책 뷰어 빌더 (양면 와이드 전면 표지 및 빈티지 스크랩북 연동)
   function buildEbook(data) {
     ebook.innerHTML = "";
     currentPageIndex = 0;
 
-    const coverPrompt = data.coverImagePrompt || `${data.destination} water color paper diorama travel poster`;
+    // 전체느낌.png의 화풍과 매칭되는 flat vector illustration cover URL
+    const coverPrompt = data.coverImagePrompt || `${data.destination} cozy flat vector travel poster illustration, minimal line art style, warm pastel color palette, aesthetic composition, highly detailed`;
     const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
     
     bgBlur.style.backgroundImage = `url('${coverImageUrl}')`;
 
     const tempPages = [];
 
-    // ⚠️ 양면 전면 표지 (Cover Spread) 구현 (1p Left + 2p Right 슬라이싱 결합) ⚠️
-    // 글자 없는 수채화 디오라마 이미지를 책을 펴자마자 양면 와이드로 꽉 차게 노출시킵니다.
+    // [페이지 1~2] 양면 전면 표지 (Cover Spread)
     tempPages.push({
       type: "cover cover-half-left",
       html: `
         <div class="visual-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
+          <!-- 커버 타이틀 (왼쪽) -->
+          <div class="cover-text-left">
+            <h1 class="cover-main-title">${data.title}</h1>
+            <p class="cover-sub-title">${data.subtitle}</p>
+          </div>
         </div>
       `
     });
@@ -297,30 +358,39 @@ document.addEventListener("DOMContentLoaded", () => {
       type: "cover cover-half-right",
       html: `
         <div class="visual-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
+          <!-- 커버 타이틀 (오른쪽 데코) -->
+          <div class="cover-text-right">
+            <div class="cover-author-tag">Written by AI</div>
+            <div class="cover-year-tag">2 0 2 6</div>
+          </div>
         </div>
       `
     });
 
-    // [페이지 3 ~ n] 본문 페이지 쌍 (Left: 이미지, Right: 텍스트)
+    // [페이지 3 ~ n] 본문 페이지 쌍 (Left: 스크랩북 이미지, Right: 텍스트)
     data.pages.forEach((p, idx) => {
-      // 본문 텍스트 (오른쪽 면) - 제1장 텍스트 영역 상단에 책 제목과 소제목 노출
       const titleHeaderHtml = idx === 0 
         ? `<div style="font-family: var(--font-serif); font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px; border-bottom: 1px dashed rgba(62,64,63,0.15); padding-bottom: 0.25rem;">
             ${data.title}
            </div>`
         : "";
 
+      // Left: 스크랩북/폴라로이드 사진 프레임
       tempPages.push({
-        type: "visual",
+        type: "visual scrapbook-visual-panel",
         html: `
-          <div class="visual-panel">
-            <img class="visual-image" src="${p.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828'}" alt="${p.chapterTitle}">
-            <div class="visual-title">${p.chapterTitle}</div>
+          <div class="visual-panel scrapbook-visual-panel-bg">
+            <div class="photo-card-wrap">
+              <div class="photo-tape-top"></div>
+              <img class="visual-image scrapbook-photo" src="${p.imageUrl}" alt="${p.chapterTitle}">
+              <div class="photo-caption">${p.chapterTitle}</div>
+            </div>
             <div class="visual-credits">Photo matching via Unsplash</div>
           </div>
         `
       });
 
+      // Right: 텍스트
       tempPages.push({
         type: "story",
         audioText: p.audioText,
@@ -335,7 +405,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="story-body">${p.storyText}</div>
             </div>
             <div class="story-footer">
-              <span>북어 트립 🍒</span>
+              <span>think-travel 🍒</span>
               <span>Page ${idx + 1}</span>
             </div>
           </div>
@@ -343,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // [일정 페이지]
+    // [일정 페이지] (Left: 여행지도.png 기반 빈티지 맵/스탬프/티켓, Right: 추천 일정 리스트)
     data.itinerary.forEach((dayPlan) => {
       let timelineHtml = "";
       dayPlan.timeline.forEach((item) => {
@@ -356,18 +426,61 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       });
 
-      // 좌측 이미지면 생성 (일정의 풍경 느낌을 대변할 실사 Unsplash 기본 사진 배치)
+      // Left Page: 빈티지 맵/티켓/노트/스탬프 레이아웃 합성
+      const ticketHtml = `
+        <div class="vintage-ticket-stub">
+          <div class="stub-header">BOARDING PASS</div>
+          <div class="stub-dest-code">${data.destination.substring(0, 3).toUpperCase()}</div>
+          <div class="stub-detail-row">
+            <div>FLIGHT: TT07</div>
+            <div>SEAT: ${dayPlan.day}A</div>
+          </div>
+          <div class="stub-date">14 JUL 2026</div>
+        </div>
+      `;
+
+      const stampHtml = `
+        <div class="vintage-stamp">
+          <div class="stamp-inner">
+            <div class="stamp-image-emblem">✈️</div>
+            <div class="stamp-txt">NIPPON 60</div>
+          </div>
+          <div class="postmark-circle">
+            <div class="postmark-text">${data.destination.toUpperCase()}</div>
+            <div class="postmark-date">2026.07.14</div>
+          </div>
+        </div>
+      `;
+
+      const noteHtml = `
+        <div class="vintage-travel-note">
+          <div class="tape-corner tape-top-left"></div>
+          <div class="tape-corner tape-bottom-right"></div>
+          <div class="note-title">TRAVEL NOTE</div>
+          <div class="note-content">
+            Day ${dayPlan.day} 코스 산책.<br>
+            문학적 발길이 머무는 길목,<br>
+            나만의 아날로그 여행 기록.
+          </div>
+        </div>
+      `;
+
+      const svgMapHtml = generateSvgRouteMap(dayPlan.timeline, data.destination);
+
       tempPages.push({
-        type: "visual",
+        type: "visual itinerary-map-panel",
         html: `
-          <div class="visual-panel">
-            <img class="visual-image" src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80" alt="Travel Timeline">
-            <div class="visual-title">추천 일정: Day ${dayPlan.day}</div>
-            <div class="visual-credits">Itinerary Road Map</div>
+          <div class="visual-panel map-panel-container">
+            ${ticketHtml}
+            ${stampHtml}
+            ${svgMapHtml}
+            ${noteHtml}
+            <div class="map-panel-title">Route Map - Day ${dayPlan.day}</div>
           </div>
         `
       });
 
+      // Right Page: 추천 일정 리스트
       tempPages.push({
         type: "itinerary",
         html: `
@@ -387,7 +500,7 @@ document.addEventListener("DOMContentLoaded", () => {
         type: "backcover",
         html: `
           <div class="page-content story-panel" style="background-color: var(--text-charcoal); color: #FFFFFF; justify-content: center; align-items: center; border-radius: 0 12px 12px 0;">
-            <h4 style="font-family: var(--font-serif); font-size: 1.5rem; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">📖 북어 트립</h4>
+            <h4 style="font-family: var(--font-serif); font-size: 1.5rem; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">📖 think-travel</h4>
             <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;">나만을 위한 감성 여행 도서관</p>
           </div>
         `
@@ -500,11 +613,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     const generateMessages = [
-      `"${dest}" 가이드북을 만드는 중... ✍️`,
-      `역사적 비하인드 스토리 팩트 검증 중... 🏛️`,
-      `수채화 디오라마 화풍의 양면 표지를 그리는 중... 🎨`,
-      `내레이터 Cherry가 낭독 준비를 하고 있습니다... 🍒`,
-      `책장 마감 및 배치가 완료 중입니다... 📚`
+      `"${dest}" 가이드북을 집필하는 중... ✍️`,
+      `선택하신 작가의 문체로 감성 에세이를 다듬는 중... ✒️`,
+      `아날로그 수채화 일러스트 커버를 인쇄하는 중... 🎨`,
+      `일정별 아날로그 지도와 스크랩 티켓을 드로잉하는 중... 🗺️`,
+      `공간 음향 및 낭독 서비스를 세팅하고 있습니다... 🎙️`
     ];
 
     const targetList = mode === "search" ? searchMessages : generateMessages;
@@ -888,8 +1001,9 @@ document.addEventListener("DOMContentLoaded", () => {
     utterance.onstart = () => {
       isPlayingAudio = true;
       btnPlayAudio.textContent = "⏸";
-      audioIcon.textContent = "🍒";
-      audioStatus.textContent = "가이드북을 상냥하게 읽어드리고 있습니다...";
+      audioIcon.textContent = "🎙️";
+      audioStatus.textContent = "작가 필체 가이드북을 음악과 함께 읽어드리고 있습니다...";
+      playAmbientSound(activeBookData.style);
     };
 
     utterance.onend = () => {
@@ -897,6 +1011,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btnPlayAudio.textContent = "▶";
       audioIcon.textContent = "🔊";
       audioStatus.textContent = "낭독이 끝났습니다.";
+      stopAmbientSound();
     };
 
     utterance.onerror = () => {
@@ -904,9 +1019,48 @@ document.addEventListener("DOMContentLoaded", () => {
       btnPlayAudio.textContent = "▶";
       audioIcon.textContent = "🔊";
       audioStatus.textContent = "음성 재생 중 지연이 감지되었습니다.";
+      stopAmbientSound();
     };
 
     synth.speak(utterance);
+  }
+
+  // ASMR 공간 오디오 재생기
+  function playAmbientSound(style) {
+    if (ambientAudio) {
+      ambientAudio.pause();
+      ambientAudio = null;
+    }
+
+    let soundUrl = "";
+    if (style === "haruki") {
+      // 카페 소음 / 재즈 바 분위기
+      soundUrl = "https://www.soundjay.com/misc/sounds/sounds-cafe-ambience-1.mp3";
+    } else if (style === "hesse") {
+      // 서정적 숲바람/자연
+      soundUrl = "https://www.soundjay.com/nature/sounds/wind-blowing-01.mp3";
+    } else {
+      // 빗소리 (김영하 스타일)
+      soundUrl = "https://www.soundjay.com/nature/sounds/rain-07.mp3";
+    }
+
+    try {
+      ambientAudio = new Audio(soundUrl);
+      ambientAudio.loop = true;
+      ambientAudio.volume = 0.12; // 작고 아늑한 배경 볼륨
+      ambientAudio.play().catch(e => {
+        console.warn("배경 오디오 자동 재생 차단됨:", e);
+      });
+    } catch (err) {
+      console.warn("오디오 객체 로드 실패:", err);
+    }
+  }
+
+  function stopAmbientSound() {
+    if (ambientAudio) {
+      ambientAudio.pause();
+      ambientAudio = null;
+    }
   }
 
   function stopAudio() {
@@ -917,6 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnPlayAudio.textContent = "▶";
     audioIcon.textContent = "🔊";
     audioStatus.textContent = "낭독이 일시 정지되었습니다.";
+    stopAmbientSound();
   }
 
   btnPlayAudio.addEventListener("click", () => {
