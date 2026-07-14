@@ -1816,3 +1816,24 @@ h1, h2, h3, .cover-main-title {
   background-color: var(--color-secondary);
   color: #ffffff;
 }
+
+.postcard-download-btn {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.postcard-download-btn:hover {
+  background-color: var(--color-secondary);
+}

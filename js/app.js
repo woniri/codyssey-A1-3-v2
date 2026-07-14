@@ -529,7 +529,10 @@ document.addEventListener("DOMContentLoaded", () => {
             
             <!-- 탭 1: AI 생성 감성 엽서 지도 -->
             <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; flex: 1;">
-              <div class="map-panel-title-overlay">Day ${dayPlan.day} Route Map</div>
+              <div class="map-panel-title-overlay">
+                <span>Day ${dayPlan.day} Route Map</span>
+                <button class="postcard-download-btn" data-url="${mapImageUrl}" data-filename="${data.destination}_Day${dayPlan.day}_Map.jpg" title="엽서 지도 다운로드">💾 저장</button>
+              </div>
             </div>
             
             <!-- 탭 2: Leaflet 실시간 인터랙티브 지도 -->
@@ -1282,8 +1285,18 @@ document.addEventListener("DOMContentLoaded", () => {
     window.activeMaps[mapId] = map;
   }
 
-  // 3D 전자책 내부의 탭 전환 위임 리스너 (엽서 지도 vs 실시간 약도)
+  // 3D 전자책 내부의 탭 전환 및 지도 다운로드 위임 리스너
   ebook.addEventListener("click", (e) => {
+    // 엽서 지도 이미지 개별 다운로드 처리
+    const downloadBtn = e.target.closest(".postcard-download-btn");
+    if (downloadBtn) {
+      e.stopPropagation();
+      const url = downloadBtn.getAttribute("data-url");
+      const filename = downloadBtn.getAttribute("data-filename");
+      downloadPostcardImage(url, filename);
+      return;
+    }
+
     const tabBtn = e.target.closest(".map-tab-btn");
     if (!tabBtn) return;
 
@@ -1316,6 +1329,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
+  // 14-3. AI 엽서 지도 다운로드 구현 (CORS 대응 Blob 처리)
+  async function downloadPostcardImage(url, filename) {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      // CORS 문제 발생 시 폴백: 새 탭에서 열어 우클릭 저장 유도
+      window.open(url, '_blank');
+    }
+  }
 
   // 16. 공유 링크 유입 처리 모듈 (load_share 대응)
   function checkSharedLink() {
