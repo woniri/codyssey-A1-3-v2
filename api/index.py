@@ -140,6 +140,17 @@ def get_gemini_client():
 
 def clean_json_text(text: str) -> str:
     text = text.strip()
+    
+    # 1. 만약 앞뒤에 잡다한 설명 텍스트가 붙어있을 경우 { } 중괄호 범위만 추출
+    try:
+        start_idx = text.find("{")
+        end_idx = text.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            text = text[start_idx:end_idx + 1]
+    except Exception:
+        pass
+        
+    # 2. 마크다운 코드 블록 잔재 제거
     if text.startswith("```"):
         lines = text.split("\n")
         if lines[0].startswith("```"):
@@ -147,6 +158,7 @@ def clean_json_text(text: str) -> str:
         if lines[-1].startswith("```"):
             lines = lines[:-1]
         text = "\n".join(lines).strip()
+        
     return text
 
 def generate_content_with_fallback(prompt: str, response_mime_type: str = None, system_instruction: str = None, chat_history: list = None) -> str:
@@ -429,10 +441,13 @@ async def search_destination(req: SearchRequest):
 }}
 """
 
+    system_instruction = "당신은 항상 JSON 포맷으로만 답변하는 여행 책방의 사서 AI입니다. 모든 대화, 도서 제목(title), 소제목(subtitle) 등 텍스트 결과물은 반드시 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어로 번역하여 출력하지 마십시오."
+
     try:
         response_text = generate_content_with_fallback(
             prompt=prompt,
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            system_instruction=system_instruction
         )
         return json.loads(clean_json_text(response_text))
     except Exception as e:
@@ -531,11 +546,14 @@ async def generate_travel_book(req: GenerateBookRequest):
 }}
 """
 
+    system_instruction = f"당신은 가이드북을 출판하는 AI 사서입니다. 도서의 모든 제목(title), 소제목(subtitle), 챕터 제목(chapterTitle), 본문(storyText), 낭독 스크립트(audioText), 일정 해설(desc) 등 모든 텍스트 결과물은 반드시 선택된 작가의 문체인 '{style_instruction}'를 기반으로 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어로 번역하여 출력하지 마십시오."
+
     try:
         # 2. Fallback 로테이션 호출
         response_text = generate_content_with_fallback(
             prompt=prompt,
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            system_instruction=system_instruction
         )
 
         # 3. JSON 데이터 파싱 (마크다운 클렌징 처리)
