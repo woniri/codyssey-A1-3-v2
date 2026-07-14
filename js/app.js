@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Book어 Trip (북어 트립) Javascript (Enhancement Core Logic)
+   think-travel (여행 책방) Javascript (Enhancement Core Logic)
    ========================================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -141,7 +141,25 @@ document.addEventListener("DOMContentLoaded", () => {
       stopLoadingMessages();
       loadingContainer.style.display = "none";
       creationCard.style.display = "block";
-      showError("검색 에러", err.message || "서재를 구성하는 도중 문제가 생겼습니다.");
+      
+      let errorTitle = "서재 구성 실패";
+      let errorMsg = err.message || "서재를 구성하는 도중 문제가 생겼습니다.";
+      
+      if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("quota") || errorMsg.toLowerCase().includes("limit") || errorMsg.toLowerCase().includes("exhausted")) {
+        errorTitle = "📖 서버가 잠시 여행을 떠났습니다 (API 한도 초과)";
+        errorMsg = "하루 동안 엮을 수 있는 도서관 호출 한도(API Quota Limit)를 모두 소진했거나 요청이 너무 몰리고 있습니다. 잠시만 대기한 뒤 다시 시도해 주세요.";
+      } else if (errorMsg.toLowerCase().includes("api key") || errorMsg.toLowerCase().includes("apikey") || errorMsg.toLowerCase().includes("auth") || errorMsg.includes("401")) {
+        errorTitle = "🔑 열쇠가 유효하지 않습니다 (인증 실패)";
+        errorMsg = "설정된 Gemini API 키가 유효하지 않거나 유실되었습니다. Vercel 환경 변수(GEMINI_API_KEY) 설정을 확인하고 재배포(Redeploy) 해주세요.";
+      } else if (errorMsg.toLowerCase().includes("fetch") || errorMsg.toLowerCase().includes("network") || errorMsg.toLowerCase().includes("failed to fetch") || errorMsg.includes("500") || errorMsg.includes("502") || errorMsg.includes("504")) {
+        errorTitle = "🌐 통신망이 끊겼습니다 (네트워크 오류)";
+        errorMsg = "서버 함수가 응답하지 않거나 인터넷 연결이 원활하지 않습니다. 인터넷 연결을 확인하고 새로고침 후 다시 실행해 보세요.";
+      } else {
+        errorTitle = "📚 서재를 여는 데 실패했습니다";
+        errorMsg = `서재를 탐색하는 도중 예기치 못한 에러가 발생했습니다.<br><br><span style="font-size:0.8rem; opacity:0.8; color:var(--color-secondary);">오류 메시지: ${errorMsg}</span>`;
+      }
+      
+      showError(errorTitle, errorMsg);
     }
   });
 
@@ -298,7 +316,25 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         bookshelfWrapper.style.display = "flex";
       }
-      showError("도서 제작 에러", err.message || "책 스토리를 생성하는 데 실패했습니다.");
+      
+      let errorTitle = "도서 제작 실패";
+      let errorMsg = err.message || "책 스토리를 생성하는 데 실패했습니다.";
+      
+      if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("quota") || errorMsg.toLowerCase().includes("limit") || errorMsg.toLowerCase().includes("exhausted")) {
+        errorTitle = "📖 서버가 잠시 여행을 떠났습니다 (API 한도 초과)";
+        errorMsg = "하루 동안 도서를 생성할 수 있는 API 호출 제한 한도를 소진했습니다. 잠시 후 다시 시도하시거나 API 할당량을 확인해 주세요.";
+      } else if (errorMsg.toLowerCase().includes("api key") || errorMsg.toLowerCase().includes("apikey") || errorMsg.toLowerCase().includes("auth") || errorMsg.includes("401")) {
+        errorTitle = "🔑 열쇠가 유효하지 않습니다 (인증 실패)";
+        errorMsg = "Gemini API 키가 올바르지 않거나 활성화되지 않았습니다. Vercel 환경 변수(GEMINI_API_KEY) 설정을 확인하고 재배포(Redeploy) 해주세요.";
+      } else if (errorMsg.toLowerCase().includes("fetch") || errorMsg.toLowerCase().includes("network") || errorMsg.toLowerCase().includes("failed to fetch") || errorMsg.includes("500") || errorMsg.includes("502") || errorMsg.includes("504")) {
+        errorTitle = "🌐 통신망이 끊겼습니다 (네트워크 오류)";
+        errorMsg = "백엔드 서버리스 서버 함수 응답 지연 또는 일시적 중단이 발생했습니다. 통신 상태를 확인하시거나 웹페이지를 새로고침 해보세요.";
+      } else {
+        errorTitle = "📚 책을 엮는 도중 펜촉이 부러졌습니다";
+        errorMsg = `도서 제작 중 일시적인 오류가 발생했습니다.<br><br><span style="font-size:0.8rem; opacity:0.8; color:var(--color-secondary);">상세 에러: ${errorMsg}</span>`;
+      }
+      
+      showError(errorTitle, errorMsg);
     }
   }
 
@@ -435,7 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="story-body">${p.storyText}</div>
             </div>
             <div class="story-footer">
-              <span>think-travel 🍒</span>
+              <span>think-travel 📖</span>
               <span>Page ${idx + 1}</span>
             </div>
           </div>
@@ -764,7 +800,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>${data.title} - 북어 트립 소장본</title>
+  <title>${data.title} - 여행 책방 소장본</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Maru+Buri:wght@400;600&family=Pretendard:wght@400;600&display=swap');
     body {
@@ -911,7 +947,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ${pagesHtml}
     ${itineraryHtml}
     <footer>
-      <p>북어 트립 (Book어 Trip) 🍒 - AI 기반 나만의 여행 책방</p>
+      <p>여행 책방 (think-travel) 📖 - AI 기반 나만의 문학 여행 책방</p>
     </footer>
   </div>
 </body>
@@ -1104,4 +1140,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnBackToFormFromShelf.addEventListener("click", resetToHome);
   btnHome.addEventListener("click", resetToHome);
+
+  // 15. 에러 알림 표시 및 닫기 처리 모듈 (API 한도, 네트워크 대응)
+  function showError(title, message) {
+    const errorModal = document.getElementById("errorModal");
+    const errorTitle = document.getElementById("errorTitle");
+    const errorMessage = document.getElementById("errorMessage");
+    
+    errorTitle.textContent = title;
+    errorMessage.innerHTML = message;
+    errorModal.style.display = "flex";
+  }
+
+  // 모달 닫기
+  btnCloseModal.addEventListener("click", () => {
+    errorModal.style.display = "none";
+  });
 });
