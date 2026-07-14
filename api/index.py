@@ -315,3 +315,65 @@ def get_unsplash_image(query):
     # 만약 검색에 실패할 경우 키워드 기반의 featured 이미지 혹은 기본 목록 중 랜덤 선택
     return f"https://images.unsplash.com/featured/1200x900/?{clean_query}"
 
+
+class ChatRequest(BaseModel):
+    destination: str
+    style: str
+    question: str
+    chat_history: Optional[List[dict]] = []
+
+@app.post("/api/chat")
+async def chat_with_librarian(req: ChatRequest):
+    client = get_gemini_client()
+    
+    style_instruction = ""
+    if req.style == "kimyoungha":
+        style_instruction = "소설가 김영하의 문체 (차분하고 성찰적이며 이성적인 한국어 높임말)"
+    elif req.style == "haruki":
+        style_instruction = "소설가 무라카미 하루키의 문체 (재즈와 위스키가 어울리는 쓸쓸하면서도 독특한 은유의 1인칭 높임말)"
+    elif req.style == "hesse":
+        style_instruction = "문학가 헤르만 헤세의 문체 (서정적이고 자연을 닮은 철학적 성찰이 가미된 정중한 높임말)"
+    else:
+        style_instruction = "감성적인 문학 여행 전문 사서의 정중한 어조"
+        
+    system_instruction = f"""
+당신은 여행지 '{req.destination}'에 관한 안내 책을 관리하는 '여행 책방의 AI 사서'입니다.
+기본적으로 친절하고 유식하게 책방의 책 속 정보와 실용적인 여행 팁(맛집, 명소, 교통 정보, 상식 등)을 답변해야 합니다.
+사용자가 선택한 테마 스타일인 '{style_instruction}'의 문체 매너를 20~30% 정도 가미하여, 다소 차분하고 서정적이며 격조 있는 톤으로 존댓말로 답변해 주세요.
+주어진 여행지인 '{req.destination}' 외의 다른 엉뚱한 국가나 도시는 가급적 배제하고, 질문에 명확하게 밀착해서 답변을 제공하십시오.
+이모지는 답변당 1~2개 이내로 아주 제한적으로 사용하여 품격 있는 서재 분위기를 유지하세요.
+"""
+    
+    # Gemini 대화 내역 포맷으로 변환
+    contents = []
+    for msg in req.chat_history:
+        role = "user" if msg.get("role") == "user" else "model"
+        contents.append(types.Content(
+            role=role,
+            parts=[types.Part.from_text(text=msg.get("text", ""))]
+        ))
+        
+    # 새로운 질문 추가
+    contents.append(types.Content(
+        role="user",
+        parts=[types.Part.from_text(text=req.question)]
+    ))
+    
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.7,
+                max_output_tokens=800
+            )
+        )
+        return {
+            "answer": response.text.strip(),
+            "error": False
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"사서와의 대화에 실패했습니다: {str(e)}")
+
+

@@ -228,6 +228,10 @@
             <button class="btn-share" id="btnShareBook" title="책 공유 링크 복사">
               🔗 공유하기
             </button>
+            <span class="divider">|</span>
+            <button class="btn-share" id="btnOpenChatbot" title="AI 여행 사서에게 질문하기">
+              💬 사서에게 묻기
+            </button>
           </div>
         </div>
         
@@ -249,6 +253,24 @@
     <p class="drawer-subtitle">브라우저에 보존된 나만의 여행 도서 목록입니다. 언제든 다시 꺼내볼 수 있습니다.</p>
     <div class="drawer-content" id="cabinetList">
       <!-- 로컬 스토리지에 보관된 도서들이 여기에 썸네일 카드로 나열됩니다. -->
+    </div>
+  </section>
+
+  <!-- 5-2. AI 여행 사서 챗봇 슬라이더 Drawer -->
+  <section class="cabinet-drawer" id="chatbotDrawer" style="right: -350px;">
+    <div class="drawer-header">
+      <h3>📖 AI 여행 사서</h3>
+      <button class="btn-close-drawer" id="btnCloseChatbot">&times;</button>
+    </div>
+    <p class="drawer-subtitle">도서관 사서가 책의 배경 정보나 현지 추천 가이드를 차분히 안내해 드립니다.</p>
+    <div class="chatbot-container">
+      <div class="chatbot-messages" id="chatbotMessages">
+        <!-- 대화 내역 버블들이 여기에 렌더링됩니다 -->
+      </div>
+      <div class="chatbot-input-area">
+        <input type="text" id="chatbotInput" placeholder="사서에게 질문을 건네보세요..." autocomplete="off">
+        <button id="btnSendChatMessage">전송</button>
+      </div>
     </div>
   </section>
 

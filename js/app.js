@@ -29,6 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const audioStatus = document.getElementById("audioStatus");
   const btnDownloadBook = document.getElementById("btnDownloadBook");
   const btnShareBook = document.getElementById("btnShareBook");
+  const btnOpenChatbot = document.getElementById("btnOpenChatbot");
+  const btnCloseChatbot = document.getElementById("btnCloseChatbot");
+  const chatbotDrawer = document.getElementById("chatbotDrawer");
+  const chatbotMessages = document.getElementById("chatbotMessages");
+  const chatbotInput = document.getElementById("chatbotInput");
+  const btnSendChatMessage = document.getElementById("btnSendChatMessage");
+  let chatbotHistory = []; // 챗봇 대화 기록 상태
 
   // 캐비닛 보관함 관련
   const btnOpenCabinet = document.getElementById("btnOpenCabinet");
@@ -1348,6 +1355,112 @@ document.addEventListener("DOMContentLoaded", () => {
       window.open(url, '_blank');
     }
   }
+
+  // 15-3. AI 여행 사서 챗봇 제어 모듈
+  function openChatbot() {
+    if (!activeBookData) return;
+    
+    // 이전 대화 기록 상태 리셋
+    chatbotMessages.innerHTML = "";
+    chatbotHistory = [];
+    
+    // 도서 정보 가져오기
+    const dest = activeBookData.destination;
+    
+    // 웰컴 메시지 작성
+    appendChatBubble("librarian", `안녕하세요! 📖 <b>'${dest}'</b> 서재에 오신 것을 환영합니다. 저는 이 서재를 지키는 AI 여행 사서입니다.<br><br>책의 내용이나 '${dest}' 현지 교통, 숨겨진 맛집, 역사적 상식 등 궁금한 점이 있으시다면 편하게 저에게 물어보세요!`);
+    
+    // 드로어 열기
+    chatbotDrawer.style.right = "0px";
+    
+    // 캐비닛 드로어가 열려 있다면 닫기
+    cabinetDrawer.style.right = "-350px";
+  }
+
+  function closeChatbot() {
+    chatbotDrawer.style.right = "-350px";
+  }
+
+  function appendChatBubble(role, text) {
+    const bubble = document.createElement("div");
+    bubble.className = `chat-bubble ${role}`;
+    bubble.innerHTML = text;
+    chatbotMessages.appendChild(bubble);
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    return bubble;
+  }
+
+  async function handleSendChatMessage() {
+    const question = chatbotInput.value.trim();
+    if (!question || !activeBookData) return;
+
+    // 인풋 비우기
+    chatbotInput.value = "";
+    
+    // 사용자 버블 추가
+    appendChatBubble("user", question);
+    
+    // 타이핑 인디케이터 버블 추가
+    const indicator = appendChatBubble("librarian", `
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    `);
+    
+    try {
+      // 작가 스타일 추출
+      const style = activeBookData.style || "cherry";
+      
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: activeBookData.destination,
+          style: style,
+          question: question,
+          chat_history: chatbotHistory
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("서버와의 연결이 올바르지 않습니다.");
+      }
+      
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.message);
+      }
+      
+      // 타이핑 인디케이터 제거
+      indicator.remove();
+      
+      // 사서 답변 버블 추가
+      const answer = data.answer.replace(/\n/g, "<br>");
+      appendChatBubble("librarian", answer);
+      
+      // 대화 기록 업데이트
+      chatbotHistory.push({ role: "user", text: question });
+      chatbotHistory.push({ role: "model", text: data.answer });
+      
+    } catch (err) {
+      indicator.remove();
+      appendChatBubble("system", `⚠️ 대화 오류: ${err.message || "사서와의 연결에 실패했습니다."}`);
+    }
+  }
+
+  // 챗봇 드로어 버튼 이벤트 바인딩
+  btnOpenChatbot.addEventListener("click", openChatbot);
+  btnCloseChatbot.addEventListener("click", closeChatbot);
+  btnSendChatMessage.addEventListener("click", handleSendChatMessage);
+  
+  chatbotInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSendChatMessage();
+    }
+  });
 
   // 16. 공유 링크 유입 처리 모듈 (load_share 대응)
   function checkSharedLink() {
