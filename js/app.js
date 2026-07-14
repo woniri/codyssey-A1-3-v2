@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnStopAudio = document.getElementById("btnStopAudio");
   const audioStatus = document.getElementById("audioStatus");
   const btnDownloadBook = document.getElementById("btnDownloadBook");
+  const btnShareBook = document.getElementById("btnShareBook");
 
   // 캐비닛 보관함 관련
   const btnOpenCabinet = document.getElementById("btnOpenCabinet");
@@ -965,6 +966,22 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(downloadUrl);
   });
 
+  // 14-2. 소셜 공유 링크 생성 및 복사
+  btnShareBook.addEventListener("click", () => {
+    if (!activeBookData) return;
+    
+    const coverPrompt = activeBookData.coverImagePrompt || `${activeBookData.destination} cozy flat vector travel poster illustration`;
+    const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
+    
+    const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      showError("📖 공유 링크 복사 완료", "나만의 감성 가이드북 공유 링크가 복사되었습니다!<br>카카오톡이나 SNS에 공유해 보세요.", "🔗");
+    }).catch(() => {
+      showError("공유 링크", `아래 주소를 복사하여 공유해 보세요:<br><br><input type="text" value="${shareUrl}" style="width:100%; padding:8px; border:1px solid rgba(138,163,153,0.3); border-radius:6px; font-size:0.85rem;" onclick="this.select()">`, "🔗");
+    });
+  });
+
   // 13. Web Speech TTS 음성 제어
   function playCurrentPageAudio() {
     stopAudio();
@@ -1142,10 +1159,15 @@ document.addEventListener("DOMContentLoaded", () => {
   btnHome.addEventListener("click", resetToHome);
 
   // 15. 에러 알림 표시 및 닫기 처리 모듈 (API 한도, 네트워크 대응)
-  function showError(title, message) {
+  function showError(title, message, icon = "⚠️") {
     const errorModal = document.getElementById("errorModal");
     const errorTitle = document.getElementById("errorTitle");
     const errorMessage = document.getElementById("errorMessage");
+    const errorIconElement = errorModal.querySelector(".error-icon");
+    
+    if (errorIconElement) {
+      errorIconElement.textContent = icon;
+    }
     
     errorTitle.textContent = title;
     errorMessage.innerHTML = message;
@@ -1156,4 +1178,25 @@ document.addEventListener("DOMContentLoaded", () => {
   btnCloseModal.addEventListener("click", () => {
     errorModal.style.display = "none";
   });
+
+  // 16. 공유 링크 유입 처리 모듈 (load_share 대응)
+  function checkSharedLink() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loadShare = urlParams.get("load_share");
+    const dest = urlParams.get("dest");
+    
+    if (loadShare === "true" && dest) {
+      const destInput = document.getElementById("destination");
+      if (destInput) {
+        destInput.value = dest;
+        // 히스토리 파라미터 청소 (주소창 깔끔하게)
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // 검색 자동으로 트리거
+        creationForm.dispatchEvent(new Event("submit"));
+      }
+    }
+  }
+
+  // 페이지 시작 시 공유 링크 체크
+  checkSharedLink();
 });

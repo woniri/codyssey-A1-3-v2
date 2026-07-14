@@ -1008,7 +1008,7 @@ main {
   user-select: none;
 }
 
-.btn-download {
+.btn-download, .btn-share {
   background: none;
   border: none;
   font-family: var(--font-sans);
@@ -1021,7 +1021,7 @@ main {
   transition: var(--transition-smooth);
 }
 
-.btn-download:hover {
+.btn-download:hover, .btn-share:hover {
   background-color: rgba(138,163,153,0.15);
   color: var(--color-primary);
 }
