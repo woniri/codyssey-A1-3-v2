@@ -86,6 +86,24 @@ class GenerateBookRequest(BaseModel):
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 UNSPLASH_ACCESS_KEY = os.environ.get("UNSPLASH_ACCESS_KEY", "")
 
+# 4대 무료 AI API 로테이션 환경 변수 로드 (OpenCode, Freebuff, Cloudflare, NVIDIA NIM)
+OPENCODE_API_KEY = os.environ.get("OPENCODE_API_KEY", "")
+OPENCODE_BASE_URL = os.environ.get("OPENCODE_BASE_URL", "https://api.opencode.com/v1/chat/completions")
+OPENCODE_MODEL = os.environ.get("OPENCODE_MODEL", "gpt-4o-mini")
+
+FREEBUFF_API_KEY = os.environ.get("FREEBUFF_API_KEY", "")
+FREEBUFF_BASE_URL = os.environ.get("FREEBUFF_BASE_URL", "https://api.freebuff.com/v1/chat/completions")
+FREEBUFF_MODEL = os.environ.get("FREEBUFF_MODEL", "gpt-4o-mini")
+
+CLOUDFLARE_API_KEY = os.environ.get("CLOUDFLARE_API_KEY", "")
+CLOUDFLARE_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
+CLOUDFLARE_BASE_URL = os.environ.get("CLOUDFLARE_BASE_URL", f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions" if CLOUDFLARE_ACCOUNT_ID else "")
+CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "@cf/meta/llama-3-8b-instruct")
+
+NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
+NVIDIA_BASE_URL = os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1/chat/completions")
+NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
+
 def get_gemini_client():
     if not GEMINI_API_KEY:
         raise HTTPException(
@@ -99,6 +117,160 @@ def get_gemini_client():
             status_code=500,
             detail=f"GenAI Client 초기화 실패: {str(e)}"
         )
+
+def clean_json_text(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+    return text
+
+def generate_content_with_fallback(prompt: str, response_mime_type: str = None, system_instruction: str = None, chat_history: list = None) -> str:
+    providers = []
+    
+    # 1. Gemini
+    if GEMINI_API_KEY:
+        providers.append({
+            "name": "Gemini API (Google)",
+            "type": "gemini"
+        })
+        
+    # 2. OpenCode
+    if OPENCODE_API_KEY:
+        providers.append({
+            "name": "OpenCode API",
+            "type": "openai",
+            "key": OPENCODE_API_KEY,
+            "url": OPENCODE_BASE_URL,
+            "model": OPENCODE_MODEL
+        })
+        
+    # 3. Freebuff
+    if FREEBUFF_API_KEY:
+        providers.append({
+            "name": "Freebuff API",
+            "type": "openai",
+            "key": FREEBUFF_API_KEY,
+            "url": FREEBUFF_BASE_URL,
+            "model": FREEBUFF_MODEL
+        })
+        
+    # 4. Cloudflare
+    if CLOUDFLARE_API_KEY and CLOUDFLARE_BASE_URL:
+        providers.append({
+            "name": "Cloudflare AI",
+            "type": "openai",
+            "key": CLOUDFLARE_API_KEY,
+            "url": CLOUDFLARE_BASE_URL,
+            "model": CLOUDFLARE_MODEL
+        })
+        
+    # 5. NVIDIA NIM
+    if NVIDIA_API_KEY:
+        providers.append({
+            "name": "NVIDIA NIM",
+            "type": "openai",
+            "key": NVIDIA_API_KEY,
+            "url": NVIDIA_BASE_URL,
+            "model": NVIDIA_MODEL
+        })
+        
+    if not providers:
+        raise HTTPException(
+            status_code=500,
+            detail="설정된 AI API 키가 없습니다. Vercel 환경 변수(GEMINI_API_KEY 등)를 확인해 주세요."
+        )
+        
+    last_exception = None
+    for p in providers:
+        try:
+            print(f"[AI ROTATION] Attempting: {p['name']}")
+            
+            if p["type"] == "gemini":
+                client = get_gemini_client()
+                
+                contents = []
+                if chat_history:
+                    for msg in chat_history:
+                        role = "user" if msg.get("role") == "user" else "model"
+                        contents.append(types.Content(
+                            role=role,
+                            parts=[types.Part.from_text(text=msg.get("text", ""))]
+                        ))
+                    contents.append(types.Content(
+                        role="user",
+                        parts=[types.Part.from_text(text=prompt)]
+                    ))
+                else:
+                    contents = prompt
+                
+                config = types.GenerateContentConfig(
+                    temperature=0.7,
+                )
+                if response_mime_type:
+                    config.response_mime_type = response_mime_type
+                if system_instruction:
+                    config.system_instruction = system_instruction
+                    
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=contents,
+                    config=config
+                )
+                return response.text.strip()
+                
+            elif p["type"] == "openai":
+                headers = {
+                    "Authorization": f"Bearer {p['key']}",
+                    "Content-Type": "application/json"
+                }
+                
+                messages = []
+                if system_instruction:
+                    messages.append({"role": "system", "content": system_instruction})
+                    
+                if chat_history:
+                    for msg in chat_history:
+                        role = "user" if msg.get("role") == "user" else "assistant"
+                        messages.append({"role": role, "content": msg.get("text", "")})
+                    messages.append({"role": "user", "content": prompt})
+                else:
+                    messages.append({"role": "user", "content": prompt})
+                    
+                payload = {
+                    "model": p["model"],
+                    "messages": messages,
+                    "temperature": 0.7
+                }
+                
+                # Cloudflare나 구버전 NVIDIA 등 response_format 미지원 공급자 대응용 예외 복구 구조
+                try:
+                    if response_mime_type == "application/json":
+                        payload["response_format"] = {"type": "json_object"}
+                    res = requests.post(p["url"], headers=headers, json=payload, timeout=25)
+                    res.raise_for_status()
+                except Exception as format_err:
+                    if "response_format" in payload:
+                        del payload["response_format"]
+                        res = requests.post(p["url"], headers=headers, json=payload, timeout=25)
+                        res.raise_for_status()
+                    else:
+                        raise format_err
+                        
+                res_json = res.json()
+                return res_json["choices"][0]["message"]["content"].strip()
+                
+        except Exception as e:
+            print(f"[AI ROTATION] Failed {p['name']}: {str(e)}")
+            last_exception = e
+            continue
+            
+    error_msg = str(last_exception) if last_exception else "모든 API 요청에 실패했습니다."
+    raise HTTPException(status_code=500, detail=f"AI 모델 로테이션 한도 소진: {error_msg}")
 
 # 헬스체크용 GET 엔드포인트
 @app.get("/api/generate")
@@ -148,15 +320,11 @@ async def search_destination(req: SearchRequest):
 """
 
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.7
-            )
+        response_text = generate_content_with_fallback(
+            prompt=prompt,
+            response_mime_type="application/json"
         )
-        return json.loads(response.text.strip())
+        return json.loads(clean_json_text(response_text))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"서재 구성 중 서버 오류 발생: {str(e)}")
 
@@ -254,18 +422,14 @@ async def generate_travel_book(req: GenerateBookRequest):
 """
 
     try:
-        # 2. Gemini API 호출
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.7
-            )
+        # 2. Fallback 로테이션 호출
+        response_text = generate_content_with_fallback(
+            prompt=prompt,
+            response_mime_type="application/json"
         )
 
-        # 3. JSON 데이터 파싱
-        result_data = json.loads(response.text.strip())
+        # 3. JSON 데이터 파싱 (마크다운 클렌징 처리)
+        result_data = json.loads(clean_json_text(response_text))
 
         # 4. Unsplash 실제 풍경 이미지 매칭 연동
         for page in result_data.get("pages", []):
@@ -360,17 +524,13 @@ async def chat_with_librarian(req: ChatRequest):
     ))
     
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.7,
-                max_output_tokens=800
-            )
+        response_text = generate_content_with_fallback(
+            prompt=req.question,
+            system_instruction=system_instruction,
+            chat_history=req.chat_history
         )
         return {
-            "answer": response.text.strip(),
+            "answer": response_text,
             "error": False
         }
     except Exception as e:
