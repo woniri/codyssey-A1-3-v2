@@ -541,11 +541,16 @@ async def generate_travel_book(req: GenerateBookRequest):
         # 3. JSON 데이터 파싱 (마크다운 클렌징 처리)
         result_data = json.loads(clean_json_text(response_text))
 
-        # 4. Unsplash 실제 풍경 이미지 매칭 연동
-        for page in result_data.get("pages", []):
+        # 4. Unsplash 실제 풍경 이미지 매칭 연동 (병렬화 처리로 대기 시간 최소화)
+        from concurrent.futures import ThreadPoolExecutor
+        pages = result_data.get("pages", [])
+        
+        def fetch_and_set_image(page):
             query = page.get("imageSearchQuery", destination)
-            image_url = get_unsplash_image(query)
-            page["imageUrl"] = image_url
+            page["imageUrl"] = get_unsplash_image(query)
+            
+        with ThreadPoolExecutor(max_workers=min(len(pages), 6)) as executor:
+            list(executor.map(fetch_and_set_image, pages)) # 모든 병렬 작업 완료 강제 대기
 
         return result_data
 
@@ -578,7 +583,7 @@ def get_unsplash_image(query):
         headers = {
             "Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}"
         }
-        res = requests.get(url, params=params, headers=headers, timeout=5)
+        res = requests.get(url, params=params, headers=headers, timeout=3)
         if res.status_code == 200:
             data = res.json()
             if data.get("results"):
