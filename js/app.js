@@ -398,6 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function buildEbook(data) {
     ebook.innerHTML = "";
     currentPageIndex = 0;
+    window.activeMaps = {}; // 이전 도서의 지도 인스턴스 캐시 리셋
 
     // 전체느낌.png의 화풍과 매칭되는 flat vector illustration cover URL
     const coverPrompt = data.coverImagePrompt || `${data.destination} cozy flat vector travel poster illustration, minimal line art style, warm pastel color palette, aesthetic composition, highly detailed`;
@@ -480,28 +481,61 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // [일정 페이지] (Left: AI 생성 빈티지 지도 일러스트, Right: 추천 일정 리스트)
+    // [일정 페이지] (Left: AI 생성 빈티지 지도 일러스트 + Leaflet.js 인터랙티브 지도, Right: 추천 일정 리스트 및 카카오/구글 맵/후기 연동)
     data.itinerary.forEach((dayPlan) => {
       let timelineHtml = "";
-      dayPlan.timeline.forEach((item) => {
+      
+      // 국내 여행지 판별 (네이버 지도 대응용)
+      const isDomestic = /서울|부산|제주|경주|강릉|대구|인천|광주|대전|울산|수원|전주|춘천|속초|대한민국|한국/i.test(data.destination);
+
+      dayPlan.timeline.forEach((item, index) => {
+        // 네이버 지도 및 구글 지도 동적 분기 링크 구성
+        const mapUrl = isDomestic
+          ? `https://map.naver.com/v5/search/${encodeURIComponent(item.place)}`
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.place + ' ' + data.destination)}`;
+          
+        const reviewUrl = isDomestic
+          ? `https://search.naver.com/search.naver?query=${encodeURIComponent(item.place + ' 후기')}`
+          : `https://www.google.com/search?q=${encodeURIComponent(item.place + ' ' + data.destination + ' reviews')}`;
+
         timelineHtml += `
           <div class="timeline-item">
             <div class="timeline-time">${item.time}</div>
-            <div class="timeline-place">${item.place}</div>
+            <div class="timeline-place">
+              <span class="place-name-txt">${item.place}</span>
+              <div class="timeline-action-buttons">
+                <a href="${mapUrl}" target="_blank" class="map-action-btn map-loc" title="지도 위치 확인">📍 위치</a>
+                <a href="${reviewUrl}" target="_blank" class="map-action-btn map-rev" title="여행 후기 보기">💬 후기</a>
+              </div>
+            </div>
             <div class="timeline-desc">${item.desc}</div>
           </div>
         `;
       });
 
-      // Left Page: AI 생성 빈티지 여행지도 일러스트 콜라주 연동
+      // Left Page: AI 생성 빈티지 여행지도 일러스트 콜라주 및 Leaflet.js 실시간 지도 탭 구성
       const mapPrompt = dayPlan.mapImagePrompt || `${data.destination} travel map postcard finds, Day ${dayPlan.day} scrapbook collage style, warm cream paper card, no text`;
       const mapImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(mapPrompt)}?width=1024&height=768&nologo=true`;
 
       tempPages.push({
         type: "visual itinerary-map-panel",
         html: `
-          <div class="visual-panel map-panel-container" style="padding: 0; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; border: 1px solid rgba(150, 130, 110, 0.15);">
-            <div class="map-panel-title-overlay">Day ${dayPlan.day} Route Map</div>
+          <div class="visual-panel map-panel-container" style="padding: 0; border: 1px solid rgba(150, 130, 110, 0.15); height: 100%; display: flex; flex-direction: column;">
+            <!-- 탭 전환 컨트롤 버튼 -->
+            <div class="map-tab-controls">
+              <button class="map-tab-btn active" data-target="postcard-day-${dayPlan.day}">🎨 엽서 지도</button>
+              <button class="map-tab-btn" data-target="interactive-day-${dayPlan.day}" data-day="${dayPlan.day}">🗺️ 실시간 약도</button>
+            </div>
+            
+            <!-- 탭 1: AI 생성 감성 엽서 지도 -->
+            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; flex: 1;">
+              <div class="map-panel-title-overlay">Day ${dayPlan.day} Route Map</div>
+            </div>
+            
+            <!-- 탭 2: Leaflet 실시간 인터랙티브 지도 -->
+            <div class="map-tab-content interactive-day-${dayPlan.day}" style="display: none; width: 100%; height: 100%; flex: 1; position: relative;">
+              <div id="leaflet-map-day-${dayPlan.day}" class="leaflet-map-box"></div>
+            </div>
           </div>
         `
       });
@@ -1177,6 +1211,110 @@ document.addEventListener("DOMContentLoaded", () => {
   // 모달 닫기
   btnCloseModal.addEventListener("click", () => {
     errorModal.style.display = "none";
+  });
+
+  // 15-2. Leaflet.js 실시간 지도 초기화 및 캐시 관리 모듈 (선택지 A)
+  window.activeMaps = window.activeMaps || {};
+
+  function initLeafletMap(day, timeline, destination) {
+    const mapId = `leaflet-map-day-${day}`;
+    const container = document.getElementById(mapId);
+    if (!container || window.activeMaps[mapId]) {
+      if (window.activeMaps[mapId]) {
+        window.activeMaps[mapId].invalidateSize();
+      }
+      return;
+    }
+
+    const points = timeline
+      .filter(item => item.lat && item.lng)
+      .map(item => [parseFloat(item.lat), parseFloat(item.lng)]);
+
+    if (points.length === 0) {
+      points.push([35.6895, 139.6917]); // 폴백: 도쿄
+    }
+
+    const avgLat = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+    const avgLng = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+
+    const map = L.map(mapId, {
+      center: [avgLat, avgLng],
+      zoom: points.length > 1 ? 12 : 14,
+      zoomControl: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; CartoDB'
+    }).addTo(map);
+
+    const latLngs = [];
+    timeline.forEach((item, index) => {
+      if (item.lat && item.lng) {
+        const lat = parseFloat(item.lat);
+        const lng = parseFloat(item.lng);
+        latLngs.push([lat, lng]);
+
+        const numberIcon = L.divIcon({
+          className: 'custom-map-marker',
+          html: `<div class="marker-number">${index + 1}</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        L.marker([lat, lng], { icon: numberIcon })
+          .addTo(map)
+          .bindPopup(`<b>Day ${day} - ${index + 1}코스</b><br><b>${item.place}</b><br>${item.time}`);
+      }
+    });
+
+    if (latLngs.length > 1) {
+      L.polyline(latLngs, {
+        color: '#D6A28C',
+        weight: 3,
+        dashArray: '5, 8',
+        opacity: 0.9
+      }).addTo(map);
+
+      const bounds = L.latLngBounds(latLngs);
+      map.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+    window.activeMaps[mapId] = map;
+  }
+
+  // 3D 전자책 내부의 탭 전환 위임 리스너 (엽서 지도 vs 실시간 약도)
+  ebook.addEventListener("click", (e) => {
+    const tabBtn = e.target.closest(".map-tab-btn");
+    if (!tabBtn) return;
+
+    const panel = tabBtn.closest(".map-panel-container");
+    if (!panel) return;
+
+    panel.querySelectorAll(".map-tab-btn").forEach(btn => btn.classList.remove("active"));
+    panel.querySelectorAll(".map-tab-content").forEach(content => {
+      content.style.display = "none";
+      content.classList.remove("active-tab");
+    });
+
+    tabBtn.classList.add("active");
+    const targetClass = tabBtn.getAttribute("data-target");
+    const targetContent = panel.querySelector(`.${targetClass}`);
+    if (targetContent) {
+      targetContent.style.display = "block";
+      targetContent.classList.add("active-tab");
+
+      if (targetClass.startsWith("interactive-")) {
+        const day = parseInt(tabBtn.getAttribute("data-day"), 10);
+        if (activeBookData && activeBookData.itinerary) {
+          const dayPlan = activeBookData.itinerary.find(d => d.day === day);
+          if (dayPlan) {
+            setTimeout(() => {
+              initLeafletMap(day, dayPlan.timeline, activeBookData.destination);
+            }, 50);
+          }
+        }
+      }
+    }
   });
 
   // 16. 공유 링크 유입 처리 모듈 (load_share 대응)

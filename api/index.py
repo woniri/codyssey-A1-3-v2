@@ -209,6 +209,7 @@ async def generate_travel_book(req: GenerateBookRequest):
 - 기간('{duration}')에 명시된 일차별 타임라인을 빠짐없이 엮어주세요.
 - 예를 들어, '{duration}'이 '2박 3일'인 경우, JSON 출력의 'itinerary' 배열 안에는 반드시 day: 1, day: 2, day: 3에 해당하는 객체가 모두 존재해야 합니다. 절대 누락하지 마십시오!
 - 각 일차별 timeline은 3개 이상의 대표 명소 동선과 체류 시간 팁, 로컬 맛집 정보 등을 흥미롭게 서술해 주세요.
+- **중요 - 위도 및 경도 좌표 추가:** timeline 배열의 각 장소(place)에 대해 실제 지리적 위도(lat)와 경도(lng)를 실수(float) 값으로 정확하게 구글 맵 기준으로 찾아서 채워주세요. (예: 도쿄 타워의 경우 lat: 35.6586, lng: 139.7454)
 - **중요 - mapImagePrompt 구성:** 각 일차별로 'mapImagePrompt' 필드를 반드시 영어로 생성해 주세요. 이 프롬프트는 아래 가이드를 준수하여 대상 도시 및 해당 일차의 방문지명(place 명칭들)에 맞춰 동적으로 변경되게 작성해야 합니다.
   * [가이드라인]:
     - **[Purpose]**: Create a travel map postcard for '{destination}' containing local landmarks and a path.
@@ -242,7 +243,9 @@ async def generate_travel_book(req: GenerateBookRequest):
         {{
           "time": "09:00",
           "place": "장소 이름",
-          "desc": "추천 팁 및 동선 해설"
+          "desc": "추천 팁 및 동선 해설",
+          "lat": 35.6895,
+          "lng": 139.6917
         }}
       ]
     }}
