@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import os
@@ -18,6 +19,55 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 오픈 그래프(Open Graph) 동적 공유 카드 렌더링용 엔드포인트
+@app.get("/api/share", response_class=HTMLResponse)
+async def share_page(title: str = "think-travel", subtitle: str = "문학 여행 가이드북", img: str = "", dest: str = ""):
+    # 이미지 최적화 기본값
+    if not img:
+        img = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80"
+        
+    html_content = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} - 여행 책방</title>
+  <meta name="description" content="{subtitle}">
+  
+  <!-- 오픈 그래프 (Open Graph) 동적 메타 태그 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{title} 📖">
+  <meta property="og:description" content="{subtitle}">
+  <meta property="og:image" content="{img}">
+  <meta property="og:url" content="https://think-travel.vercel.app/api/share">
+  
+  <!-- 트위터 카드 -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{title} 📖">
+  <meta name="twitter:description" content="{subtitle}">
+  <meta name="twitter:image" content="{img}">
+  
+  <!-- 메인 웹 서비스로 리다이렉트 (사용자 유입 시 자연스러운 전환) -->
+  <script>
+    const destParam = "{dest}";
+    if (destParam) {{
+      window.location.href = "/?load_share=true&dest=" + encodeURIComponent(destParam);
+    }} else {{
+      window.location.href = "/";
+    }}
+  </script>
+</head>
+<body>
+  <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+    <h2>{title}</h2>
+    <p>{subtitle}</p>
+    <p>나만의 감성 문학 여행 가이드북 제작소, 여행 책방으로 이동하고 있습니다...</p>
+  </div>
+</body>
+</html>
+"""
+    return html_content
 
 class SearchRequest(BaseModel):
     destination: str

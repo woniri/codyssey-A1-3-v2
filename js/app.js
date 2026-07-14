@@ -448,7 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="visual-panel scrapbook-visual-panel-bg">
             <div class="photo-card-wrap">
               <div class="photo-tape-top"></div>
-              <img class="scrapbook-photo" src="${p.imageUrl}" alt="${p.chapterTitle}">
+              <img class="scrapbook-photo" src="${p.imageUrl}" alt="${p.chapterTitle}" loading="lazy" decoding="async">
               <div class="photo-caption">${p.chapterTitle}</div>
             </div>
             <div class="visual-credits">Photo matching via Unsplash</div>
