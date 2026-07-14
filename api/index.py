@@ -48,14 +48,11 @@ async def share_page(title: str = "think-travel", subtitle: str = "문학 여행
   <meta name="twitter:description" content="{subtitle}">
   <meta name="twitter:image" content="{img}">
   
-  <!-- 메인 웹 서비스로 리다이렉트 (사용자 유입 시 자연스러운 전환) -->
+  <!-- 메인 웹 서비스로 리다이렉트 (사용자 유입 시 모든 공유 매개변수 전송) -->
   <script>
-    const destParam = "{dest}";
-    if (destParam) {{
-      window.location.href = "/?load_share=true&dest=" + encodeURIComponent(destParam);
-    }} else {{
-      window.location.href = "/";
-    }}
+    const params = new URLSearchParams(window.location.search);
+    params.set("load_share", "true");
+    window.location.href = "/?" + params.toString();
   </script>
 </head>
 <body>
@@ -441,7 +438,7 @@ async def search_destination(req: SearchRequest):
 }}
 """
 
-    system_instruction = "당신은 항상 JSON 포맷으로만 답변하는 여행 책방의 사서 AI입니다. 모든 대화, 도서 제목(title), 소제목(subtitle) 등 텍스트 결과물은 반드시 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어로 번역하여 출력하지 마십시오."
+    system_instruction = "당신은 항상 JSON 포맷으로만 답변하는 여행 책방의 사서 AI입니다. 모든 대화, 도서 제목(title), 소제목(subtitle) 등 텍스트 결과물은 반드시 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어 단어(예: heart, finds, travel, place, route, trip 등)나 영문 철자를 텍스트에 섞지 마십시오. 오직 순수한 한글 단어만 사용해 주세요."
 
     try:
         response_text = generate_content_with_fallback(
@@ -546,7 +543,7 @@ async def generate_travel_book(req: GenerateBookRequest):
 }}
 """
 
-    system_instruction = f"당신은 가이드북을 출판하는 AI 사서입니다. 도서의 모든 제목(title), 소제목(subtitle), 챕터 제목(chapterTitle), 본문(storyText), 낭독 스크립트(audioText), 일정 해설(desc) 등 모든 텍스트 결과물은 반드시 선택된 작가의 문체인 '{style_instruction}'를 기반으로 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어로 번역하여 출력하지 마십시오."
+    system_instruction = f"당신은 가이드북을 출판하는 AI 사서입니다. 도서의 모든 제목(title), 소제목(subtitle), 챕터 제목(chapterTitle), 본문(storyText), 낭독 스크립트(audioText), 일정 해설(desc) 등 모든 텍스트 결과물은 반드시 선택된 작가의 문체인 '{style_instruction}'를 기반으로 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어 단어(예: heart, finds, travel, place, route, trip, metrics, details 등)나 영문 철자를 텍스트에 섞지 마십시오. 오직 순수한 한글 단어만 사용해 주세요. (단, 이미지 프롬프트나 이미지 검색용 키워드인 coverImagePrompt, mapImagePrompt, imageSearchQuery 등 영문 지침이 있는 특정 프로퍼티 제외)"
 
     try:
         # 2. Fallback 로테이션 호출

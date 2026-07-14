@@ -73,6 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnOpenCabinet.addEventListener("click", () => {
     loadCabinetList();
     cabinetDrawer.classList.add("open");
+    chatbotDrawer.classList.remove("open"); // 챗봇이 열려있다면 닫기
   });
 
   btnCloseCabinet.addEventListener("click", () => {
@@ -529,13 +530,15 @@ document.addEventListener("DOMContentLoaded", () => {
         html: `
           <div class="visual-panel map-panel-container" style="padding: 0; border: 1px solid rgba(150, 130, 110, 0.15); height: 100%; display: flex; flex-direction: column;">
             <!-- 탭 전환 컨트롤 버튼 -->
-            <div class="map-tab-controls">
+            <div class="map-tab-controls" style="z-index: 10;">
               <button class="map-tab-btn active" data-target="postcard-day-${dayPlan.day}">🎨 엽서 지도</button>
               <button class="map-tab-btn" data-target="interactive-day-${dayPlan.day}" data-day="${dayPlan.day}">🗺️ 실시간 약도</button>
             </div>
             
             <!-- 탭 1: AI 생성 감성 엽서 지도 -->
-            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; flex: 1;">
+            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; flex: 1; position: relative; z-index: 3;">
+              <!-- 빈티지 경로 SVG 일러스트 오버레이 -->
+              ${generateSvgRouteMap(dayPlan.timeline, data.destination)}
               <div class="map-panel-title-overlay">
                 <span>Day ${dayPlan.day} Route Map</span>
                 <button class="postcard-download-btn" data-url="${mapImageUrl}" data-filename="${data.destination}_Day${dayPlan.day}_Map.jpg" title="엽서 지도 다운로드">💾 저장</button>
@@ -1017,7 +1020,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const coverPrompt = activeBookData.coverImagePrompt || `${activeBookData.destination} cozy flat vector travel poster illustration`;
     const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
     
-    const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}`;
+    const activeThemes = activeBookData.themes ? activeBookData.themes.join(",") : "";
+    const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}&style=${encodeURIComponent(activeBookData.style || 'cherry')}&duration=${encodeURIComponent(activeBookData.duration || '당일치기')}&themes=${encodeURIComponent(activeThemes)}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
       showError("📖 공유 링크 복사 완료", "나만의 감성 가이드북 공유 링크가 복사되었습니다!<br>카카오톡이나 SNS에 공유해 보세요.", "🔗");
@@ -1371,14 +1375,14 @@ document.addEventListener("DOMContentLoaded", () => {
     appendChatBubble("librarian", `안녕하세요! 📖 <b>'${dest}'</b> 서재에 오신 것을 환영합니다. 저는 이 서재를 지키는 AI 여행 사서입니다.<br><br>책의 내용이나 '${dest}' 현지 교통, 숨겨진 맛집, 역사적 상식 등 궁금한 점이 있으시다면 편하게 저에게 물어보세요!`);
     
     // 드로어 열기
-    chatbotDrawer.style.right = "0px";
+    chatbotDrawer.classList.add("open");
     
     // 캐비닛 드로어가 열려 있다면 닫기
-    cabinetDrawer.style.right = "-350px";
+    cabinetDrawer.classList.remove("open");
   }
 
   function closeChatbot() {
-    chatbotDrawer.style.right = "-350px";
+    chatbotDrawer.classList.remove("open");
   }
 
   function appendChatBubble(role, text) {
@@ -1462,21 +1466,96 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // 15-4. 공유 링크 유입 시 캐시가 없으면 즉시 백엔드에서 책 생성 실행
+  async function generateSharedBook(destination, style, duration, themes) {
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: destination,
+          parent_destination: destination,
+          style: style,
+          duration: duration,
+          themes: themes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP 상세 생성 에러: ${response.status}`);
+      }
+
+      const bookData = await response.json();
+      if (bookData.error) {
+        throw new Error(bookData.message);
+      }
+
+      activeBookData = bookData;
+      
+      const coverPrompt = bookData.coverImagePrompt || `${bookData.destination} cozy flat vector travel poster illustration, minimal line art style, warm pastel color palette, aesthetic composition, highly detailed`;
+      const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
+      
+      const img = new Image();
+      img.src = coverImageUrl;
+      
+      const timeoutId = setTimeout(() => {
+        proceed();
+      }, 8000);
+      
+      img.onload = img.onerror = () => {
+        clearTimeout(timeoutId);
+        proceed();
+      };
+      
+      function proceed() {
+        stopLoadingMessages();
+        loadingContainer.style.display = "none";
+        saveToCabinet(bookData, style, duration);
+        buildEbook(bookData);
+      }
+
+    } catch (err) {
+      stopLoadingMessages();
+      loadingContainer.style.display = "none";
+      creationCard.style.display = "block";
+      showError("공유 도서 로드 실패", `공유된 여행 일정을 불러오는 데 실패했습니다.<br><br><span style="font-size:0.8rem; color:var(--color-secondary);">${err.message}</span>`);
+    }
+  }
+
   // 16. 공유 링크 유입 처리 모듈 (load_share 대응)
   function checkSharedLink() {
     const urlParams = new URLSearchParams(window.location.search);
     const loadShare = urlParams.get("load_share");
     const dest = urlParams.get("dest");
+    const title = urlParams.get("title");
+    const style = urlParams.get("style") || "cherry";
+    const duration = urlParams.get("duration") || "당일치기";
+    const themesStr = urlParams.get("themes") || "";
+    const themes = themesStr ? themesStr.split(",") : [];
     
     if (loadShare === "true" && dest) {
-      const destInput = document.getElementById("destination");
-      if (destInput) {
-        destInput.value = dest;
-        // 히스토리 파라미터 청소 (주소창 깔끔하게)
+      // 1. 내 보관함 캐시(my_travel_library)에 똑같은 책이 이미 존재하면 재생성하지 않고 즉시 연다.
+      const storageKey = "my_travel_library";
+      const library = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const foundBook = library.find(b => b.destination === dest && b.title === title);
+      
+      if (foundBook) {
+        activeBookData = foundBook;
+        creationCard.style.display = "none";
+        bookshelfWrapper.style.display = "none";
+        buildEbook(foundBook);
+        // URL 클린업
         window.history.replaceState({}, document.title, window.location.pathname);
-        // 검색 자동으로 트리거
-        creationForm.dispatchEvent(new Event("submit"));
+        return;
       }
+
+      // 2. 보관함에 없으면 로딩창 띄우고 즉시 재생성 API 호출
+      creationCard.style.display = "none";
+      bookshelfWrapper.style.display = "none";
+      loadingContainer.style.display = "flex";
+      startLoadingMessages();
+
+      generateSharedBook(dest, style, duration, themes);
     }
   }
 
