@@ -305,14 +305,80 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
     error_msg = str(last_exception) if last_exception else "모든 API 요청에 실패했습니다."
     raise HTTPException(status_code=500, detail=f"AI 모델 로테이션 한도 소진: {error_msg}")
 
-# 헬스체크용 GET 엔드포인트
+# 헬스체크용 GET 엔드포인트 (등록 여부 점검)
 @app.get("/api/generate")
 async def health_check():
     return {
         "status": "healthy", 
-        "service": "Book어 Trip API Backend",
-        "api_key_configured": bool(GEMINI_API_KEY)
+        "service": "think-travel API Backend",
+        "configured_providers": {
+            "gemini": bool(GEMINI_API_KEY),
+            "openrouter": bool(OPENROUTER_API_KEY),
+            "groq": bool(GROQ_API_KEY),
+            "cloudflare": bool(CLOUDFLARE_API_KEY),
+            "nvidia_nim": bool(NVIDIA_API_KEY),
+            "opencode": bool(OPENCODE_API_KEY),
+            "freebuff": bool(FREEBUFF_API_KEY)
+        }
     }
+
+# API 키 유효성 실시간 점검 진단용 GET 엔드포인트
+@app.get("/api/test-rotation")
+async def test_rotation():
+    results = {}
+    
+    # 1. Gemini
+    if GEMINI_API_KEY:
+        try:
+            client = get_gemini_client()
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents="test",
+                config=types.GenerateContentConfig(max_output_tokens=5)
+            )
+            results["Gemini"] = "Success"
+        except Exception as e:
+            results["Gemini"] = f"Failed: {str(e)}"
+    else:
+        results["Gemini"] = "Not Configured"
+        
+    # OpenAI 호환 테스트 목록
+    openai_tests = [
+        ("OpenRouter", OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL, True),
+        ("Groq", GROQ_API_KEY, GROQ_BASE_URL, GROQ_MODEL, False),
+        ("Cloudflare", CLOUDFLARE_API_KEY, CLOUDFLARE_BASE_URL, CLOUDFLARE_MODEL, False),
+        ("NVIDIA NIM", NVIDIA_API_KEY, NVIDIA_BASE_URL, NVIDIA_MODEL, False),
+        ("OpenCode", OPENCODE_API_KEY, OPENCODE_BASE_URL, OPENCODE_MODEL, False),
+        ("Freebuff", FREEBUFF_API_KEY, FREEBUFF_BASE_URL, FREEBUFF_MODEL, False)
+    ]
+    
+    for name, key, url, model, is_openrouter in openai_tests:
+        if key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json"
+                }
+                if is_openrouter:
+                    headers["HTTP-Referer"] = "https://think-travel.vercel.app"
+                    headers["X-Title"] = "think-travel"
+                    
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": "test"}],
+                    "max_tokens": 5
+                }
+                res = requests.post(url, headers=headers, json=payload, timeout=10)
+                if res.status_code == 200:
+                    results[name] = "Success"
+                else:
+                    results[name] = f"Failed (HTTP {res.status_code}): {res.text[:120]}"
+            except Exception as e:
+                results[name] = f"Failed: {str(e)}"
+        else:
+            results[name] = "Not Configured"
+            
+    return results
 
 # 1. 여행지 검색 및 서재 분할 판정 API (책꽂이 썸네일용 coverPrompt 필드 및 6~7개 후보군 구성)
 @app.post("/api/search")
