@@ -91,15 +91,15 @@ OPENCODE_API_KEY = os.environ.get("OPENCODE_API_KEY", "")
 OPENCODE_BASE_URL = os.environ.get("OPENCODE_BASE_URL", "https://api.opencode.com/v1/chat/completions")
 OPENCODE_MODEL = os.environ.get("OPENCODE_MODEL", "gpt-4o-mini")
 
-# OpenRouter (무료 모델 로테이션 추가 지원)
+# OpenRouter (무료 모델 로테이션 추가 지원 - openrouter/free 자동 라우팅 활용)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemma-2-9b-it:free")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openrouter/free")
 
 # Groq (초고속 무료 티어 인퍼런스 엔진)
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1/chat/completions")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "gemma2-9b-it")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
 
 FREEBUFF_API_KEY = os.environ.get("FREEBUFF_API_KEY", "")
 FREEBUFF_BASE_URL = os.environ.get("FREEBUFF_BASE_URL", "https://api.freebuff.com/v1/chat/completions")
@@ -108,11 +108,11 @@ FREEBUFF_MODEL = os.environ.get("FREEBUFF_MODEL", "gpt-4o-mini")
 CLOUDFLARE_API_KEY = os.environ.get("CLOUDFLARE_API_KEY", "")
 CLOUDFLARE_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
 CLOUDFLARE_BASE_URL = os.environ.get("CLOUDFLARE_BASE_URL", f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions" if CLOUDFLARE_ACCOUNT_ID else "")
-CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "@cf/meta/llama-3-8b-instruct")
+CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "@cf/meta/llama-3.1-8b-instruct")
 
 NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1/chat/completions")
-NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
+NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.1-8b-instruct")
 
 def get_gemini_client():
     if not GEMINI_API_KEY:
