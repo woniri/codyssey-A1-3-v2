@@ -250,6 +250,7 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
                 
                 config = types.GenerateContentConfig(
                     temperature=0.7,
+                    http_options={"timeout": 4.5}
                 )
                 if response_mime_type:
                     config.response_mime_type = response_mime_type
@@ -294,12 +295,12 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
                 try:
                     if response_mime_type == "application/json":
                         payload["response_format"] = {"type": "json_object"}
-                    res = requests.post(p["url"], headers=headers, json=payload, timeout=25)
+                    res = requests.post(p["url"], headers=headers, json=payload, timeout=4.5)
                     res.raise_for_status()
                 except Exception as format_err:
                     if "response_format" in payload:
                         del payload["response_format"]
-                        res = requests.post(p["url"], headers=headers, json=payload, timeout=25)
+                        res = requests.post(p["url"], headers=headers, json=payload, timeout=4.5)
                         res.raise_for_status()
                     else:
                         raise format_err
