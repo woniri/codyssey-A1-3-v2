@@ -155,10 +155,17 @@ async def generate_travel_book(req: GenerateBookRequest):
 - 본문 1~4장의 이미지 검색용 영어 키워드는 해당 페이지에 수록될 관광지 풍경 실사 사진을 Unsplash에서 검색할 수 있는 구체적인 실제 키워드로 영어로 적어주세요.
   (예: 'Gyeongju Bulguksa temple autumn view')
 
-[추천 일정 제약 규칙]
+[추천 일정 및 지도 프롬프트 제약 규칙]
 - 기간('{duration}')에 명시된 일차별 타임라인을 빠짐없이 엮어주세요.
 - 예를 들어, '{duration}'이 '2박 3일'인 경우, JSON 출력의 'itinerary' 배열 안에는 반드시 day: 1, day: 2, day: 3에 해당하는 객체가 모두 존재해야 합니다. 절대 누락하지 마십시오!
 - 각 일차별 timeline은 3개 이상의 대표 명소 동선과 체류 시간 팁, 로컬 맛집 정보 등을 흥미롭게 서술해 주세요.
+- **중요 - mapImagePrompt 구성:** 각 일차별로 'mapImagePrompt' 필드를 반드시 영어로 생성해 주세요. 이 프롬프트는 아래 가이드를 준수하여 대상 도시 및 해당 일차의 방문지명(place 명칭들)에 맞춰 동적으로 변경되게 작성해야 합니다.
+  * [가이드라인]:
+    - **[Purpose]**: Create a travel map postcard for '{destination}' containing local landmarks and a path.
+    - **[Scene]**: A warm cream paper card showing a hand-drawn route map of '{destination}'. Connect timeline locations (e.g. the places in timeline) with simple dashed lines. Accent the card with ticket stubs, postage stamps, masking tape, and receipts to look like a page from a travel note.
+    - **[Style]**: Map postcard illustration combined with scrapbook collage. Use thin ink lines, watercolor texture, cream/beige/terracotta color palette, retro stamp details.
+    - **[Composition]**: 1536x1024 landscape card layout. Route map in the center, title "Route Map" on top, stamp on top right, travel note box on bottom right.
+    - **[Text]**: Explicitly mention text to include in English: Title: '{destination} finds', subtitle: 'Day {day} route', labels for places (insert the timeline place names in English), postmark: '{destination}', note title: 'TRAVEL NOTE' with a small summary sentence.
 
 반드시 아래 제공된 JSON 포맷 스키마에 맞춰 완전한 JSON 형식으로 출력해야 합니다. JSON 텍스트 바깥에 불필요한 백틱(```json 등)이나 마크다운 텍스트는 절대 포함하지 마십시오.
 
@@ -180,6 +187,7 @@ async def generate_travel_book(req: GenerateBookRequest):
   "itinerary": [
     {{
       "day": 1,
+      "mapImagePrompt": "이 일차의 추천 동선을 그리기 위한 영문 이미지 생성 프롬프트 (위의 가이드라인 형식을 적용)",
       "timeline": [
         {{
           "time": "09:00",

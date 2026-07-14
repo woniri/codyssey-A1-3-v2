@@ -27,19 +27,16 @@
   <!-- 메인 본문 콘텐츠 -->
   <main>
     
-    <!-- 1. 여행 감성의 메인 입력 폼 카드 -->
+    <!-- 1. 여행 감성의 메인 입력 폼 카드 (전체느낌.png 포스터 화풍 적용) -->
     <section class="creation-card" id="creationCard">
-      <!-- 둥실둥실 부유하는 여행 종이 공예 데코 카드 -->
-      <div class="deco-objects">
-        <div class="deco-item ticket">🎫</div>
-        <div class="deco-item compass">🧭</div>
-        <div class="deco-item plane">✈️</div>
-        <div class="deco-item cloud-left">☁️</div>
-        <div class="deco-item cloud-right">☁️</div>
+      <div class="poster-border-frame"></div>
+      
+      <!-- 포스터 헤더 타이포그래피 (전체느낌.png의 오클랜드 타이포 재현) -->
+      <div class="poster-header">
+        <h1 class="poster-title">여행 책방</h1>
+        <div class="poster-english">L I T E R A R Y &nbsp; T R A V E L &nbsp; G U I D E</div>
+        <p class="poster-subtitle">항구와 도시, 골목길에서 건져 올린 나만의 문학 여행기</p>
       </div>
-
-      <h2>책으로 떠나는 깊이 있는 여행 🍒</h2>
-      <p class="subtitle">가고 싶은 도시나 지역명을 입력해 보세요. 나만의 일러스트 책방이 펼쳐집니다.</p>
       
       <form id="creationForm" onsubmit="return false;">
         <!-- 여행지 입력 -->
@@ -135,6 +132,12 @@
         <!-- 제출 버튼 -->
         <button type="submit" class="btn-submit" id="btnSubmit">🎨 내 도서관 엮기</button>
       </form>
+
+      <!-- 포스터 푸터 데코 (전체느낌.png의 하단 레이아웃 재현) -->
+      <div class="poster-footer">
+        <div>C I T Y &nbsp; O F &nbsp; M E M O R I E S</div>
+        <div class="poster-footer-sub">THINK-TRAVEL &bull; AESTHETIC COMPOSITION &bull; 2 0 2 6</div>
+      </div>
     </section>
 
     <!-- 2. 스마트 책 분할: 책꽂이 서재 화면 (Book Shelf UI) -->

@@ -1351,7 +1351,6 @@ main {
     width: 100%;
   }
 }
-
 /* ==========================================================================
    13. 빈티지 스크랩북 & 아날로그 여정 지도 (전체느낌.png & 여행지도.png 매칭)
    ========================================================================== */
@@ -1371,15 +1370,30 @@ h1, h2, h3, .cover-main-title {
   border-color: var(--color-secondary);
 }
 
-/* 1) 양면 와이드 표지 텍스트 레이아웃 */
+/* 1) 양면 와이드 표지 텍스트 및 패널 레이아웃 (전체느낌.png 매칭) */
+.cover-half-left-panel {
+  background-size: 200% 100% !important;
+  background-position: left center !important;
+}
+
+.cover-half-right-panel {
+  background-size: 200% 100% !important;
+  background-position: right center !important;
+}
+
+/* 표지 그라데이션 강도 조절 (밝은 아날로그 느낌 유지) */
+.book-cover .visual-panel::after {
+  background: linear-gradient(to bottom, rgba(62,64,63,0.0) 0%, rgba(62,64,63,0.25) 100%) !important;
+}
+
 .cover-text-left {
   position: absolute;
-  bottom: 12%;
+  top: 15%;
   left: 10%;
   color: var(--text-charcoal);
   text-align: left;
   z-index: 5;
-  background-color: rgba(250, 246, 240, 0.9);
+  background-color: rgba(250, 246, 240, 0.92);
   padding: 1.5rem 2rem;
   border-radius: 12px;
   box-shadow: var(--shadow-layered);
@@ -1403,11 +1417,11 @@ h1, h2, h3, .cover-main-title {
 
 .cover-text-right {
   position: absolute;
-  bottom: 12%;
+  bottom: 15%;
   right: 10%;
   text-align: right;
   z-index: 5;
-  background-color: rgba(250, 246, 240, 0.9);
+  background-color: rgba(250, 246, 240, 0.92);
   padding: 1rem 1.5rem;
   border-radius: 12px;
   color: var(--text-charcoal);
@@ -1448,6 +1462,7 @@ h1, h2, h3, .cover-main-title {
   max-width: 320px;
   position: relative;
   border: 1px solid rgba(0,0,0,0.05);
+  z-index: 5; /* 그라데이션 오버레이 위로 배치 */
 }
 
 .photo-tape-top {
@@ -1470,6 +1485,7 @@ h1, h2, h3, .cover-main-title {
   position: relative !important;
   filter: sepia(10%) contrast(94%) brightness(102%) !important;
   border: 1px solid rgba(0,0,0,0.08);
+  z-index: 2;
 }
 
 .photo-caption {
@@ -1485,217 +1501,147 @@ h1, h2, h3, .cover-main-title {
 /* 3) 빈티지 아날로그 지도 패널 (itinerary-map-panel) */
 .map-panel-container {
   background: radial-gradient(circle, #fbf9f4 0%, #ebdfc5 100%) !important;
-  padding: 1.5rem !important;
+  padding: 0 !important; /* 이미지 꽉 차게 */
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   border: 1px solid rgba(150, 130, 110, 0.15);
 }
 
-.map-panel-title {
-  position: absolute;
-  bottom: 12px;
-  left: 20px;
-  font-family: 'Caveat', cursive;
-  font-size: 1.2rem;
-  color: rgba(130, 100, 80, 0.6);
-  font-weight: 700;
+.map-panel-container::after {
+  display: none !important; /* 지도 위에 검은 그라데이션이 덮어씌워지는 것 방지 */
 }
 
-/* 보딩패스 티켓 스타일 */
-.vintage-ticket-stub {
+.map-panel-title-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.3rem;
+  color: var(--text-charcoal);
+  font-weight: 700;
+  background-color: rgba(250, 246, 240, 0.88);
+  padding: 6px 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  z-index: 5;
+  border: 1px solid rgba(130, 90, 70, 0.15);
+}
+
+/* 4) 첫 페이지 포스터 스타일링 (전체느낌.png 매칭) */
+.creation-card {
+  border: 1px solid rgba(138, 163, 153, 0.2) !important;
+  background-color: #FAF6F0 !important; /* 포근한 크림톤 */
+  padding: 4rem 3rem 3rem 3rem !important;
+  overflow: hidden;
+  position: relative;
+}
+
+.poster-border-frame {
   position: absolute;
   top: 15px;
   left: 15px;
-  background-color: #ebdcb9;
-  border: 1px dashed rgba(130, 90, 70, 0.35);
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-family: 'Pretendard', sans-serif;
-  color: #6d5b4a;
-  transform: rotate(-4deg);
-  box-shadow: 2px 4px 8px rgba(0,0,0,0.06);
-  z-index: 5;
-  max-width: 130px;
-}
-
-.stub-header {
-  font-size: 0.55rem;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(130, 90, 70, 0.2);
-  padding-bottom: 2px;
-  margin-bottom: 4px;
-}
-
-.stub-dest-code {
-  font-size: 1.3rem;
-  font-weight: 900;
-  line-height: 1;
-  color: var(--color-secondary);
-}
-
-.stub-detail-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.5rem;
-  margin-top: 3px;
-  opacity: 0.8;
-}
-
-.stub-date {
-  font-size: 0.5rem;
-  font-weight: bold;
-  margin-top: 2px;
-}
-
-/* 빈티지 우표 및 소인 */
-.vintage-stamp {
-  position: absolute;
-  top: 12px;
   right: 15px;
-  z-index: 5;
-  transform: rotate(5deg);
-}
-
-.stamp-inner {
-  background-color: #f7eed8;
-  border: 2px dotted #c3b59b;
-  width: 44px;
-  height: 52px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px;
-  box-shadow: 1px 3px 6px rgba(0,0,0,0.08);
-}
-
-.stamp-image-emblem {
-  font-size: 1.2rem;
-}
-
-.stamp-txt {
-  font-size: 0.45rem;
-  font-weight: 700;
-  color: #927b66;
-}
-
-.postmark-circle {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 55px;
-  height: 55px;
-  border: 1px dashed rgba(110, 80, 60, 0.35);
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-10deg);
-  pointer-events: none;
-}
-
-.postmark-text {
-  font-size: 0.45rem;
-  font-weight: 700;
-  color: rgba(110, 80, 60, 0.4);
-  letter-spacing: 0.5px;
-}
-
-.postmark-date {
-  font-size: 0.35rem;
-  color: rgba(110, 80, 60, 0.4);
-  margin-top: 1px;
-}
-
-/* 수기 여행 노트 */
-.vintage-travel-note {
-  position: absolute;
   bottom: 15px;
-  right: 15px;
-  background-color: #fefdfa;
-  border: 1px solid rgba(130, 90, 70, 0.15);
-  box-shadow: 2px 6px 12px rgba(62,64,63,0.1);
-  padding: 10px 12px;
-  width: 145px;
-  transform: rotate(1.5deg);
-  z-index: 5;
+  border: 1px solid rgba(138, 163, 153, 0.18);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.vintage-travel-note::before {
+.poster-border-frame::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: linear-gradient(rgba(138, 163, 153, 0.08) 1px, transparent 1px);
-  background-size: 100% 16px;
-  pointer-events: none;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  border: 1px dashed rgba(138, 163, 153, 0.1);
 }
 
-.note-title {
-  font-family: 'Caveat', cursive;
-  font-size: 0.95rem;
-  font-weight: bold;
-  color: var(--color-secondary);
-  border-bottom: 1px solid rgba(130, 90, 70, 0.15);
-  padding-bottom: 2px;
-  margin-bottom: 6px;
-}
-
-.note-content {
-  font-family: 'Nanum Pen Script', cursive;
-  font-size: 1.25rem;
-  line-height: 1.35;
-  color: #4a423a;
-}
-
-.tape-corner {
-  position: absolute;
-  width: 35px;
-  height: 12px;
-  background-color: rgba(235, 220, 150, 0.35);
-  z-index: 10;
-}
-
-.tape-top-left {
-  top: -6px;
-  left: -12px;
-  transform: rotate(-35deg);
-}
-
-.tape-bottom-right {
-  bottom: -6px;
-  right: -12px;
-  transform: rotate(-35deg);
-}
-
-/* SVG 아날로그 지도 스타일 */
-.vintage-route-map {
-  width: 100%;
-  height: auto;
-  max-height: 200px;
-  margin: auto;
+.poster-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  position: relative;
   z-index: 2;
 }
 
-.map-node-label {
-  font-family: 'Nanum Pen Script', cursive;
-  font-size: 1.2rem;
-  fill: #4e4034;
-  font-weight: 500;
-  text-shadow: 0 1px 2px #fff, 0 -1px 2px #fff;
+.poster-title {
+  font-family: var(--font-serif);
+  font-size: 3.2rem !important;
+  font-weight: 400 !important;
+  letter-spacing: 8px;
+  color: var(--text-charcoal);
+  margin-bottom: 0.4rem;
+  text-align: center;
 }
 
-.map-node-time {
-  font-family: 'Caveat', cursive;
-  font-size: 0.95rem;
-  font-weight: bold;
-  fill: var(--color-secondary);
+.poster-english {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: var(--color-secondary); /* 말린 살구빛 */
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.poster-subtitle {
+  font-family: var(--font-serif);
+  font-size: 1rem !important;
+  color: var(--text-muted);
+  text-align: center;
+  border-top: 1px solid rgba(62,64,63,0.12);
+  border-bottom: 1px solid rgba(62,64,63,0.12);
+  padding: 0.5rem 1.5rem;
+  display: inline-block;
+}
+
+.poster-footer {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  border-top: 1px dashed rgba(62,64,63,0.15);
+  padding-top: 1.5rem;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.poster-footer-sub {
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
+/* 5) 책 표지 썸네일 로딩 스켈레톤 (Shimmer 효과) */
+.loading-cover {
+  background: linear-gradient(90deg, #F3ECE3 25%, #EADDCB 50%, #F3ECE3 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+  border-left-color: var(--color-accent) !important;
+  box-shadow: none !important;
+}
+
+.loading-cover * {
+  visibility: hidden; /* 로딩 중 텍스트 가림 */
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.loaded-cover {
+  animation: fadeIn 0.4s ease-out;
 }
 
 /* 모바일 전용 스타일 덮어쓰기 */
@@ -1713,44 +1659,8 @@ h1, h2, h3, .cover-main-title {
   .map-panel-container {
     height: 380px !important;
   }
-  .vintage-ticket-stub {
-    top: 10px;
-    left: 10px;
-    padding: 4px 6px;
-    max-width: 100px;
-  }
-  .stub-dest-code {
-    font-size: 1rem;
-  }
-  .vintage-stamp {
-    top: 10px;
-    right: 10px;
-  }
-  .stamp-inner {
-    width: 32px;
-    height: 38px;
-    padding: 2px;
-  }
-  .stamp-image-emblem {
-    font-size: 0.8rem;
-  }
-  .postmark-circle {
-    display: none; /* 모바일 화면에서는 생략하여 겹침 방지 */
-  }
-  .vintage-travel-note {
-    bottom: 10px;
-    right: 10px;
-    width: 120px;
-    padding: 6px 8px;
-  }
-  .note-content {
-    font-size: 1rem;
-  }
-  .vintage-route-map {
-    max-height: 180px;
-  }
   .cover-text-left {
-    bottom: 8%;
+    top: 8%;
     left: 5%;
     padding: 1rem;
     max-width: 90%;
@@ -1761,5 +1671,21 @@ h1, h2, h3, .cover-main-title {
   .cover-text-right {
     display: none; /* 모바일에서는 생략 */
   }
+  .creation-card {
+    padding: 2.5rem 1.5rem 2rem 1.5rem !important;
+  }
+  .poster-title {
+    font-size: 2.2rem !important;
+    letter-spacing: 4px;
+  }
+  .poster-english {
+    font-size: 0.75rem;
+    letter-spacing: 4px;
+  }
+  .poster-subtitle {
+    font-size: 0.85rem !important;
+    padding: 0.4rem 1rem;
+  }
 }
+
 

@@ -172,13 +172,24 @@ document.addEventListener("DOMContentLoaded", () => {
     
     shelfBooks.forEach((book) => {
       const bookCard = document.createElement("div");
-      bookCard.className = "shelf-book";
+      bookCard.className = "shelf-book loading-cover"; // 로딩 스켈레톤 기본 탑재
       
-      // 책꽂이 책 표지 일러스트 썸네일 입히기 (Pollinations AI 무광 일러스트 연동)
-      const thumbPrompt = book.coverPrompt || `${book.theme} paper cut diorama`;
+      // 책꽂이 책 표지 일러스트 썸네일 입히기 (Pollinations AI 화풍 연동)
+      const thumbPrompt = book.coverPrompt || `${book.theme} cozy flat vector travel poster illustration, warm pastel color palette, minimal line art style, aesthetic composition, highly detailed`;
       const thumbUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(thumbPrompt)}?width=130&height=190&nologo=true`;
       
-      bookCard.style.backgroundImage = `url('${thumbUrl}')`;
+      const img = new Image();
+      img.src = thumbUrl;
+      img.onload = () => {
+        bookCard.style.backgroundImage = `url('${thumbUrl}')`;
+        bookCard.classList.remove("loading-cover");
+        bookCard.classList.add("loaded-cover");
+      };
+      img.onerror = () => {
+        // 이미지 로딩 실패 시 아늑한 그라데이션 폴백
+        bookCard.style.background = "linear-gradient(135deg, #FAF6F0 0%, #D6A28C 100%)";
+        bookCard.classList.remove("loading-cover");
+      };
 
       bookCard.innerHTML = `
         <div class="shelf-book-title">${book.title}</div>
@@ -254,11 +265,30 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       activeBookData = bookData;
-      stopLoadingMessages();
-      loadingContainer.style.display = "none";
-
-      saveToCabinet(bookData, style, duration);
-      buildEbook(bookData);
+      
+      // 커버 이미지 프리로드 (Pollinations AI 속도 지연 대응)
+      const coverPrompt = bookData.coverImagePrompt || `${bookData.destination} cozy flat vector travel poster illustration, minimal line art style, warm pastel color palette, aesthetic composition, highly detailed`;
+      const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
+      
+      const img = new Image();
+      img.src = coverImageUrl;
+      
+      // 최대 8초간 프리로드 대기 후 강제 진입 (에러/타임아웃 방지)
+      const timeoutId = setTimeout(() => {
+        proceed();
+      }, 8000);
+      
+      img.onload = img.onerror = () => {
+        clearTimeout(timeoutId);
+        proceed();
+      };
+      
+      function proceed() {
+        stopLoadingMessages();
+        loadingContainer.style.display = "none";
+        saveToCabinet(bookData, style, duration);
+        buildEbook(bookData);
+      }
 
     } catch (err) {
       stopLoadingMessages();
@@ -344,10 +374,10 @@ document.addEventListener("DOMContentLoaded", () => {
     tempPages.push({
       type: "cover cover-half-left",
       html: `
-        <div class="visual-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
+        <div class="visual-panel cover-half-left-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
           <!-- 커버 타이틀 (왼쪽) -->
           <div class="cover-text-left">
-            <h1 class="cover-main-title">${data.title}</h1>
+            <h1 class="cover-main-title">${data.destination}</h1>
             <p class="cover-sub-title">${data.subtitle}</p>
           </div>
         </div>
@@ -357,11 +387,11 @@ document.addEventListener("DOMContentLoaded", () => {
     tempPages.push({
       type: "cover cover-half-right",
       html: `
-        <div class="visual-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
+        <div class="visual-panel cover-half-right-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
           <!-- 커버 타이틀 (오른쪽 데코) -->
           <div class="cover-text-right">
             <div class="cover-author-tag">Written by AI</div>
-            <div class="cover-year-tag">2 0 2 6</div>
+            <div class="cover-year-tag">${new Date().getFullYear()}</div>
           </div>
         </div>
       `
@@ -375,14 +405,14 @@ document.addEventListener("DOMContentLoaded", () => {
            </div>`
         : "";
 
-      // Left: 스크랩북/폴라로이드 사진 프레임
+      // Left: 스크랩북/폴라로이드 사진 프레임 (visual-image 클래스 제거하여 높이 붕괴 해결!)
       tempPages.push({
         type: "visual scrapbook-visual-panel",
         html: `
           <div class="visual-panel scrapbook-visual-panel-bg">
             <div class="photo-card-wrap">
               <div class="photo-tape-top"></div>
-              <img class="visual-image scrapbook-photo" src="${p.imageUrl}" alt="${p.chapterTitle}">
+              <img class="scrapbook-photo" src="${p.imageUrl}" alt="${p.chapterTitle}">
               <div class="photo-caption">${p.chapterTitle}</div>
             </div>
             <div class="visual-credits">Photo matching via Unsplash</div>
@@ -413,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // [일정 페이지] (Left: 여행지도.png 기반 빈티지 맵/스탬프/티켓, Right: 추천 일정 리스트)
+    // [일정 페이지] (Left: AI 생성 빈티지 지도 일러스트, Right: 추천 일정 리스트)
     data.itinerary.forEach((dayPlan) => {
       let timelineHtml = "";
       dayPlan.timeline.forEach((item) => {
@@ -426,56 +456,15 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       });
 
-      // Left Page: 빈티지 맵/티켓/노트/스탬프 레이아웃 합성
-      const ticketHtml = `
-        <div class="vintage-ticket-stub">
-          <div class="stub-header">BOARDING PASS</div>
-          <div class="stub-dest-code">${data.destination.substring(0, 3).toUpperCase()}</div>
-          <div class="stub-detail-row">
-            <div>FLIGHT: TT07</div>
-            <div>SEAT: ${dayPlan.day}A</div>
-          </div>
-          <div class="stub-date">14 JUL 2026</div>
-        </div>
-      `;
-
-      const stampHtml = `
-        <div class="vintage-stamp">
-          <div class="stamp-inner">
-            <div class="stamp-image-emblem">✈️</div>
-            <div class="stamp-txt">NIPPON 60</div>
-          </div>
-          <div class="postmark-circle">
-            <div class="postmark-text">${data.destination.toUpperCase()}</div>
-            <div class="postmark-date">2026.07.14</div>
-          </div>
-        </div>
-      `;
-
-      const noteHtml = `
-        <div class="vintage-travel-note">
-          <div class="tape-corner tape-top-left"></div>
-          <div class="tape-corner tape-bottom-right"></div>
-          <div class="note-title">TRAVEL NOTE</div>
-          <div class="note-content">
-            Day ${dayPlan.day} 코스 산책.<br>
-            문학적 발길이 머무는 길목,<br>
-            나만의 아날로그 여행 기록.
-          </div>
-        </div>
-      `;
-
-      const svgMapHtml = generateSvgRouteMap(dayPlan.timeline, data.destination);
+      // Left Page: AI 생성 빈티지 여행지도 일러스트 콜라주 연동
+      const mapPrompt = dayPlan.mapImagePrompt || `${data.destination} travel map postcard finds, Day ${dayPlan.day} scrapbook collage style, warm cream paper card, no text`;
+      const mapImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(mapPrompt)}?width=1024&height=768&nologo=true`;
 
       tempPages.push({
         type: "visual itinerary-map-panel",
         html: `
-          <div class="visual-panel map-panel-container">
-            ${ticketHtml}
-            ${stampHtml}
-            ${svgMapHtml}
-            ${noteHtml}
-            <div class="map-panel-title">Route Map - Day ${dayPlan.day}</div>
+          <div class="visual-panel map-panel-container" style="padding: 0; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; border: 1px solid rgba(150, 130, 110, 0.15);">
+            <div class="map-panel-title-overlay">Day ${dayPlan.day} Route Map</div>
           </div>
         `
       });
