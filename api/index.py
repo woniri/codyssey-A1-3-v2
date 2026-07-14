@@ -91,6 +91,11 @@ OPENCODE_API_KEY = os.environ.get("OPENCODE_API_KEY", "")
 OPENCODE_BASE_URL = os.environ.get("OPENCODE_BASE_URL", "https://api.opencode.com/v1/chat/completions")
 OPENCODE_MODEL = os.environ.get("OPENCODE_MODEL", "gpt-4o-mini")
 
+# OpenRouter (무료 모델 로테이션 추가 지원)
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemma-2-9b-it:free")
+
 FREEBUFF_API_KEY = os.environ.get("FREEBUFF_API_KEY", "")
 FREEBUFF_BASE_URL = os.environ.get("FREEBUFF_BASE_URL", "https://api.freebuff.com/v1/chat/completions")
 FREEBUFF_MODEL = os.environ.get("FREEBUFF_MODEL", "gpt-4o-mini")
@@ -137,6 +142,16 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
         providers.append({
             "name": "Gemini API (Google)",
             "type": "gemini"
+        })
+        
+    # 1.5. OpenRouter
+    if OPENROUTER_API_KEY:
+        providers.append({
+            "name": "OpenRouter API",
+            "type": "openrouter",
+            "key": OPENROUTER_API_KEY,
+            "url": OPENROUTER_BASE_URL,
+            "model": OPENROUTER_MODEL
         })
         
     # 2. OpenCode
@@ -223,11 +238,14 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
                 )
                 return response.text.strip()
                 
-            elif p["type"] == "openai":
+            elif p["type"] in ("openai", "openrouter"):
                 headers = {
                     "Authorization": f"Bearer {p['key']}",
                     "Content-Type": "application/json"
                 }
+                if p["type"] == "openrouter":
+                    headers["HTTP-Referer"] = "https://think-travel.vercel.app"
+                    headers["X-Title"] = "think-travel"
                 
                 messages = []
                 if system_instruction:
