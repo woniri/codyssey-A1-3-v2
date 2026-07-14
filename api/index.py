@@ -114,6 +114,16 @@ NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1/chat/completions")
 NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.1-8b-instruct")
 
+# 구버전 단종 모델명 방어 및 강제 보정 코드 (Vercel 환경 변수가 구버전으로 고정되어 안 바뀌는 상황 대비)
+if CLOUDFLARE_MODEL == "@cf/meta/llama-3-8b-instruct":
+    CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+if GROQ_MODEL == "gemma2-9b-it":
+    GROQ_MODEL = "llama-3.1-8b-instant"
+if OPENROUTER_MODEL == "google/gemma-2-9b-it:free":
+    OPENROUTER_MODEL = "openrouter/free"
+if NVIDIA_MODEL == "meta/llama-3.1-70b-instruct":
+    NVIDIA_MODEL = "meta/llama-3.1-8b-instruct"
+
 def get_gemini_client():
     if not GEMINI_API_KEY:
         raise HTTPException(
