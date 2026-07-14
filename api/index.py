@@ -96,6 +96,11 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemma-2-9b-it:free")
 
+# Groq (초고속 무료 티어 인퍼런스 엔진)
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1/chat/completions")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "gemma2-9b-it")
+
 FREEBUFF_API_KEY = os.environ.get("FREEBUFF_API_KEY", "")
 FREEBUFF_BASE_URL = os.environ.get("FREEBUFF_BASE_URL", "https://api.freebuff.com/v1/chat/completions")
 FREEBUFF_MODEL = os.environ.get("FREEBUFF_MODEL", "gpt-4o-mini")
@@ -137,14 +142,14 @@ def clean_json_text(text: str) -> str:
 def generate_content_with_fallback(prompt: str, response_mime_type: str = None, system_instruction: str = None, chat_history: list = None) -> str:
     providers = []
     
-    # 1. Gemini
+    # 1. Gemini (최기본 최우선 호출)
     if GEMINI_API_KEY:
         providers.append({
             "name": "Gemini API (Google)",
             "type": "gemini"
         })
         
-    # 1.5. OpenRouter
+    # 2. OpenRouter (1순위 폴백)
     if OPENROUTER_API_KEY:
         providers.append({
             "name": "OpenRouter API",
@@ -154,27 +159,17 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
             "model": OPENROUTER_MODEL
         })
         
-    # 2. OpenCode
-    if OPENCODE_API_KEY:
+    # 3. Groq (2순위 폴백)
+    if GROQ_API_KEY:
         providers.append({
-            "name": "OpenCode API",
+            "name": "Groq API",
             "type": "openai",
-            "key": OPENCODE_API_KEY,
-            "url": OPENCODE_BASE_URL,
-            "model": OPENCODE_MODEL
+            "key": GROQ_API_KEY,
+            "url": GROQ_BASE_URL,
+            "model": GROQ_MODEL
         })
         
-    # 3. Freebuff
-    if FREEBUFF_API_KEY:
-        providers.append({
-            "name": "Freebuff API",
-            "type": "openai",
-            "key": FREEBUFF_API_KEY,
-            "url": FREEBUFF_BASE_URL,
-            "model": FREEBUFF_MODEL
-        })
-        
-    # 4. Cloudflare
+    # 4. Cloudflare (3순위 폴백)
     if CLOUDFLARE_API_KEY and CLOUDFLARE_BASE_URL:
         providers.append({
             "name": "Cloudflare AI",
@@ -184,7 +179,7 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
             "model": CLOUDFLARE_MODEL
         })
         
-    # 5. NVIDIA NIM
+    # 5. NVIDIA NIM (4순위 폴백)
     if NVIDIA_API_KEY:
         providers.append({
             "name": "NVIDIA NIM",
@@ -192,6 +187,26 @@ def generate_content_with_fallback(prompt: str, response_mime_type: str = None, 
             "key": NVIDIA_API_KEY,
             "url": NVIDIA_BASE_URL,
             "model": NVIDIA_MODEL
+        })
+        
+    # 6. OpenCode (최하단 폴백 GPT)
+    if OPENCODE_API_KEY:
+        providers.append({
+            "name": "OpenCode API",
+            "type": "openai",
+            "key": OPENCODE_API_KEY,
+            "url": OPENCODE_BASE_URL,
+            "model": OPENCODE_MODEL
+        })
+        
+    # 7. Freebuff (최하단 폴백 GPT)
+    if FREEBUFF_API_KEY:
+        providers.append({
+            "name": "Freebuff API",
+            "type": "openai",
+            "key": FREEBUFF_API_KEY,
+            "url": FREEBUFF_BASE_URL,
+            "model": FREEBUFF_MODEL
         })
         
     if not providers:
