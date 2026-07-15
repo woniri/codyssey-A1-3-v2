@@ -451,29 +451,52 @@ async def search_destination(req: SearchRequest):
         raise HTTPException(status_code=500, detail=f"서재 구성 중 서버 오류 발생: {str(e)}")
 
 def generate_map_postcard_prompt(destination: str, day: int, timeline: list) -> str:
+    dest_lower = destination.lower()
+    city_name = destination
+    colors_str = "warm terracotta, soft olive green, dusty blue, and warm beige"
+    features_str = "compass rose, simple street grid, and dashed boundary lines"
+    
+    # 대표적인 세 도시에 대한 매핑 규칙 (사용자 제공 데이터 완벽 반영)
+    if "삿포로" in dest_lower or "sapporo" in dest_lower:
+        city_name = "Sapporo city"
+        colors_str = "light blue, pale apricot, mint green, and beige"
+        features_str = "compass rose and street blocks"
+    elif "오타루" in dest_lower or "otaru" in dest_lower:
+        city_name = "Otaru city"
+        colors_str = "pale navy, warm orange, cream"
+        features_str = "harbor silhouette and canal paths"
+    elif "방콕" in dest_lower or "bangkok" in dest_lower:
+        city_name = "Bangkok city"
+        colors_str = "deep navy, sunset orange, beige"
+        features_str = "river curves and street grid"
+    else:
+        # 그 외 도시는 기본으로 처리하되, 영문명 활용
+        city_name = f"{destination} city"
+        
+    # 타임라인 장소들을 location pins를 가진 랜드마크 묘사로 변환
     places = [item.get("place", "") for item in timeline if item.get("place")][:4]
-    places_str = ", ".join(places)
     
-    # 엽서의 무드와 일치하는 짧은 한글 한 줄 메모 생성
-    note_memo = f"{destination}의 골목, 따뜻한 밤 불빛 아래서"
-    if "방콕" in destination or "Bangkok" in destination:
-        note_memo = "망고 향과 불빛이 남은 밤"
-    elif "서울" in destination:
-        note_memo = "기와 지붕 위로 흐르는 달빛 아래"
-    elif "도쿄" in destination:
-        note_memo = "도심의 따스한 노을과 불빛"
+    landmark_items = []
+    for p in places:
+        # AI가 핀포인트와 선을 그릴 수 있게 랜드마크명과 핀 묘사를 곁들임
+        landmark_items.append(f"a distinct landmark icon with a location pin for '{p}'")
     
+    if landmark_items:
+        if len(landmark_items) > 1:
+            landmarks_str = ", ".join(landmark_items[:-1]) + f", and {landmark_items[-1]}"
+        else:
+            landmarks_str = landmark_items[0]
+    else:
+        landmarks_str = f"a classic location pin icon for '{destination}'"
+        
+    # 사용자 제공 템플릿 구조와 100% 매칭
     prompt = f"""
-A beautiful analog travel map postcard card of '{destination}' Day {day}.
-Two-color ink print (deep navy blue and sunset orange only) in risograph and silk screen printing style.
-Slightly misaligned print layers, hand-drawn imperfect sketch lines, and warm matte cream paper card texture.
-The card shows a minimalist route map of '{destination}' connecting timeline places ({places_str}) with simple orange dashed paths and cute small linear hand-drawn icons.
-Top has a large title in Korean: "{destination}".
-Subtitle: "Day {day} 추천 여정".
-Small labels in Korean next to icons: {', '.join([f'"{p}"' for p in places])}.
-Top right has a postage stamp box, and a circular travel postmark stamp of "2026.02.14".
-Bottom has a handwritten diary note in Korean: "{note_memo}".
-Flat scanned composition, soft indoor diffused lighting with light paper shadows on the margins. High fidelity text rendering.
+A vintage tourist map of {city_name} on cream paper, top-down flat lay view. 
+Scattered landmark icons with location pins: {landmarks_str}. 
+Bold dashed walking route line connecting each pin across the paper. 
+Soft faded pastel colors - {colors_str}. 
+Map features {features_str}. 
+Minimalist illustration style, clear distinct icons, high readability, vintage postcard feel. 3:2 ratio.
 """
     return prompt.strip()
 
