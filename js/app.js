@@ -347,37 +347,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 8. 빈티지 아날로그 지도 SVG 렌더러 (여행지도.png 기반)
+  // 8. 빈티지 아날로그 지도 SVG 렌더러 (실제 위경도 상대 매핑 기술 탑재)
   function generateSvgRouteMap(timeline, destination) {
     if (!timeline || timeline.length === 0) return "";
     
-    // 320x200 뷰박스 기준 노드 좌표
-    const coords = [
-      { x: 60, y: 130 },
-      { x: 130, y: 50 },
-      { x: 210, y: 130 },
-      { x: 275, y: 65 }
-    ];
+    const width = 320;
+    const height = 200;
+    const padding = 35; // 노드가 잘리지 않도록 안전 패딩 설정
+    
+    // 위경도 값이 있는 유효 지점 추출
+    const validPoints = timeline.filter(item => typeof item.lat === 'number' && typeof item.lng === 'number');
+    
+    let coords = [];
+    
+    if (validPoints.length === 0) {
+      // 위경도 좌표가 아예 없는 경우: 기본 정적 분산 좌표 사용 (폴백)
+      const fallbackCoords = [
+        { x: 60, y: 130 },
+        { x: 130, y: 50 },
+        { x: 210, y: 130 },
+        { x: 275, y: 65 }
+      ];
+      coords = timeline.map((item, idx) => fallbackCoords[idx] || { x: 50 + idx * 70, y: 80 });
+    } else if (validPoints.length === 1) {
+      // 1개 지점만 있는 경우 정중앙
+      coords = [{ x: width / 2, y: height / 2 }];
+    } else {
+      // 2개 이상 지점인 경우 Bounding Box 계산하여 비례 변환
+      let minLat = Infinity, maxLat = -Infinity;
+      let minLng = Infinity, maxLng = -Infinity;
+      
+      validPoints.forEach(pt => {
+        if (pt.lat < minLat) minLat = pt.lat;
+        if (pt.lat > maxLat) maxLat = pt.lat;
+        if (pt.lng < minLng) minLng = pt.lng;
+        if (pt.lng > maxLng) maxLng = pt.lng;
+      });
+      
+      const latRange = maxLat - minLat;
+      const lngRange = maxLng - minLng;
+      
+      timeline.forEach(item => {
+        if (typeof item.lat === 'number' && typeof item.lng === 'number') {
+          // 경도(x축) 비례 계산
+          const x = lngRange === 0 
+            ? width / 2 
+            : padding + ((item.lng - minLng) / lngRange) * (width - 2 * padding);
+          
+          // 위도(y축) 비례 계산 (위도가 클수록 지도 위쪽(y값이 작아짐))
+          const y = latRange === 0 
+            ? height / 2 
+            : height - (padding + ((item.lat - minLat) / latRange) * (height - 2 * padding));
+            
+          coords.push({ x, y });
+        } else {
+          // 좌표가 잘못 누락된 경우 기본값
+          coords.push({ x: width / 2, y: height / 2 });
+        }
+      });
+    }
     
     let pathD = "";
     let nodesHtml = "";
     
-    timeline.forEach((item, index) => {
-      const pt = coords[index] || { x: 50 + index * 70, y: 80 };
+    coords.forEach((pt, index) => {
+      const item = timeline[index];
       if (index === 0) {
         pathD += `M ${pt.x} ${pt.y}`;
       } else {
         pathD += ` L ${pt.x} ${pt.y}`;
       }
       
+      // 장소 이름 가독성을 극대화하기 위한 라벨 오프셋 자동 조정 (홀수/짝수 교차 위아래 배치)
+      const labelYOffset = index % 2 === 0 ? 25 : -14;
+      const timeYOffset = index % 2 === 0 ? -12 : 27;
+      
       nodesHtml += `
         <g class="map-node">
-          <!-- 연결 노드 원형 및 그림자 -->
-          <circle cx="${pt.x}" cy="${pt.y}" r="8" fill="var(--color-secondary)" stroke="#fff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(62,64,63,0.25));" />
-          <circle cx="${pt.x}" cy="${pt.y}" r="3" fill="#fff" />
-          <!-- 시간대 및 장소명 라벨 -->
-          <text x="${pt.x}" y="${pt.y - 12}" text-anchor="middle" class="map-node-time">${item.time}</text>
-          <text x="${pt.x}" y="${pt.y + 24}" text-anchor="middle" class="map-node-label">${item.place}</text>
+          <!-- 핀 그림자 및 원형 핀 -->
+          <circle cx="${pt.x}" cy="${pt.y}" r="9" fill="var(--color-secondary)" stroke="#fff" stroke-width="2.5" style="filter: drop-shadow(0 2px 4px rgba(62,64,63,0.3));" />
+          <circle cx="${pt.x}" cy="${pt.y}" r="3.5" fill="#fff" />
+          
+          <!-- 시간대 및 장소명 라벨 (격차 교차 조절로 겹침 방지) -->
+          <text x="${pt.x}" y="${pt.y + timeYOffset}" text-anchor="middle" class="map-node-time">${item.time}</text>
+          <text x="${pt.x}" y="${pt.y + labelYOffset}" text-anchor="middle" class="map-node-label" style="font-weight: 700; fill: var(--text-charcoal); text-shadow: 0 1px 2px rgba(255,255,255,0.9);">${item.place}</text>
         </g>
       `;
     });
@@ -386,16 +439,16 @@ document.addEventListener("DOMContentLoaded", () => {
       <svg viewBox="0 0 320 200" class="vintage-route-map">
         <defs>
           <pattern id="mapGrid" width="16" height="16" patternUnits="userSpaceOnUse">
-            <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(62,64,63,0.03)" stroke-width="0.7"/>
+            <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(62,64,63,0.035)" stroke-width="0.8"/>
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#mapGrid)" rx="6" />
+        <rect width="100%" height="100%" fill="url(#mapGrid)" rx="8" />
         
-        <!-- 실선 도로 그리드 형상화 데코 -->
-        <path d="M 20 40 L 300 40 M 40 100 L 280 100 M 20 160 L 300 160 M 80 10 L 80 190 M 160 10 L 160 190 M 240 10 L 240 190" fill="none" stroke="rgba(62,64,63,0.04)" stroke-width="1" />
+        <!-- 그리드 외곽 테두리선 -->
+        <rect x="4" y="4" width="312" height="192" fill="none" stroke="rgba(62,64,63,0.08)" stroke-width="1.5" stroke-dasharray="3, 3" rx="4" />
         
-        <!-- 경로 연결 선 -->
-        <path d="${pathD}" fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-dasharray="6,6" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));" />
+        <!-- 경로 연결 점선 -->
+        <path d="${pathD}" fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-dasharray="6, 7" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));" />
         
         ${nodesHtml}
       </svg>
@@ -521,9 +574,9 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       });
 
-      // Left Page: AI 생성 빈티지 여행지도 일러스트 콜라주 및 Leaflet.js 실시간 지도 탭 구성
-      const mapPrompt = dayPlan.mapImagePrompt || `${data.destination} travel map postcard finds, Day ${dayPlan.day} scrapbook collage style, warm cream paper card, no text`;
-      const mapImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(mapPrompt)}?width=1024&height=768&nologo=true`;
+      // Left Page: 감성 아날로그 엽서 지도 (0초 로드, 실제 위경도 SVG 매핑 및 빈티지 스크랩북 콜라주 데코)
+      const bgImgUrl = data.pages[dayPlan.day - 1]?.imageUrl || data.pages[0]?.imageUrl || "";
+      const stampImgUrl = data.pages[(dayPlan.day) % data.pages.length]?.imageUrl || data.pages[0]?.imageUrl || "";
 
       tempPages.push({
         type: "visual itinerary-map-panel",
@@ -535,13 +588,40 @@ document.addEventListener("DOMContentLoaded", () => {
               <button class="map-tab-btn" data-target="interactive-day-${dayPlan.day}" data-day="${dayPlan.day}">🗺️ 실시간 약도</button>
             </div>
             
-            <!-- 탭 1: AI 생성 감성 엽서 지도 -->
-            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; background-image: url('${mapImageUrl}'); background-size: cover; background-position: center; flex: 1; position: relative; z-index: 3;">
-              <!-- 빈티지 경로 SVG 일러스트 오버레이 -->
+            <!-- 탭 1: 아날로그 감성 엽서 지도 (서버 통신 없이 0초 만에 렌더링) -->
+            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; flex: 1; position: relative; overflow: hidden;">
+              <!-- 엽서 배경 래퍼 (Unsplash 풍경 은은하게 합성) -->
+              <div class="postcard-bg-wrap" style="background-image: url('${bgImgUrl}');"></div>
+              
+              <!-- 아날로그 모눈 격자 오버레이 -->
+              <div class="postcard-grid-overlay"></div>
+              
+              <!-- 스크랩북 빈티지 콜라주 데코레이션 -->
+              <div class="postcard-scrapbook-overlay">
+                <!-- 마스킹 테이프 -->
+                <div class="masking-tape"></div>
+                
+                <!-- 빈티지 우표 및 포스트마크 -->
+                <div class="vintage-stamp">
+                  <div class="stamp-inner" style="background-image: url('${stampImgUrl}');">
+                    <span class="stamp-price">2026</span>
+                  </div>
+                  <div class="postmark-circle">${data.destination.substring(0, 8).toUpperCase()}</div>
+                </div>
+                
+                <!-- 엽서 손글씨 타이포그래피 (Nanum Pen Script 적용) -->
+                <div class="postcard-handwriting">
+                  <div class="hand-title">${data.destination}</div>
+                  <div class="hand-subtitle">Day ${dayPlan.day} 여정</div>
+                </div>
+              </div>
+
+              <!-- 빈티지 경로 SVG 일러스트 오버레이 (실제 위경도 100% 반영) -->
               ${generateSvgRouteMap(dayPlan.timeline, data.destination)}
+              
               <div class="map-panel-title-overlay">
                 <span>Day ${dayPlan.day} Route Map</span>
-                <button class="postcard-download-btn" data-url="${mapImageUrl}" data-filename="${data.destination}_Day${dayPlan.day}_Map.jpg" title="엽서 지도 다운로드">💾 저장</button>
+                <button class="postcard-download-btn" data-url="${bgImgUrl}" data-filename="${data.destination}_Day${dayPlan.day}_Bg.jpg" title="엽서 배경 사진 다운로드">💾 풍경 저장</button>
               </div>
             </div>
             
@@ -1013,21 +1093,46 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(downloadUrl);
   });
 
-  // 14-2. 소셜 공유 링크 생성 및 복사
-  btnShareBook.addEventListener("click", () => {
+  // 14-2. 소셜 공유 링크 생성 및 복사 (전체 데이터 압축 포함형)
+  btnShareBook.addEventListener("click", async () => {
     if (!activeBookData) return;
     
-    const coverPrompt = activeBookData.coverImagePrompt || `${activeBookData.destination} cozy flat vector travel poster illustration`;
-    const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
-    
-    const activeThemes = activeBookData.themes ? activeBookData.themes.join(",") : "";
-    const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}&style=${encodeURIComponent(activeBookData.style || 'cherry')}&duration=${encodeURIComponent(activeBookData.duration || '당일치기')}&themes=${encodeURIComponent(activeThemes)}`;
-    
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      showError("📖 공유 링크 복사 완료", "나만의 감성 가이드북 공유 링크가 복사되었습니다!<br>카카오톡이나 SNS에 공유해 보세요.", "🔗");
-    }).catch(() => {
-      showError("공유 링크", `아래 주소를 복사하여 공유해 보세요:<br><br><input type="text" value="${shareUrl}" style="width:100%; padding:8px; border:1px solid rgba(138,163,153,0.3); border-radius:6px; font-size:0.85rem;" onclick="this.select()">`, "🔗");
-    });
+    // 버튼 로딩 피드백
+    const originalText = btnShareBook.innerHTML;
+    btnShareBook.innerHTML = "⏳ 생성 중...";
+    btnShareBook.disabled = true;
+
+    try {
+      // 본 도서에 작가 스타일과 기간 정보가 누락되어 있다면 폼 데이터 등으로 채워 전송
+      const dataToCompress = { ...activeBookData };
+      if (!dataToCompress.style) {
+        dataToCompress.style = document.querySelector('input[name="style"]:checked')?.value || "cherry";
+      }
+      if (!dataToCompress.duration) {
+        dataToCompress.duration = document.getElementById("durationSelect")?.value || "당일치기";
+      }
+      
+      // 도서 데이터 압축 인코딩
+      const compressedData = await compressBookData(dataToCompress);
+      
+      const coverPrompt = activeBookData.coverImagePrompt || `${activeBookData.destination} cozy flat vector travel poster illustration`;
+      const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
+      
+      // book_data 파라미터에 압축 스트링을 붙여 공유 링크 생성
+      const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}&book_data=${compressedData}`;
+      
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showError("📖 공유 링크 복사 완료", "나만의 감성 가이드북 공유 링크가 복사되었습니다!<br>카카오톡이나 SNS에 공유하면 친구가 똑같은 책을 즉시 펼쳐볼 수 있습니다.", "🔗");
+      }).catch(() => {
+        showError("공유 링크", `아래 주소를 복사하여 공유해 보세요:<br><br><input type="text" value="${shareUrl}" style="width:100%; padding:8px; border:1px solid rgba(138,163,153,0.3); border-radius:6px; font-size:0.85rem;" onclick="this.select()">`, "🔗");
+      });
+    } catch (err) {
+      console.error("Failed to generate compressed share link:", err);
+      showError("공유 링크 생성 실패", "공유 링크를 생성하는 과정에서 에러가 발생했습니다: " + err.message);
+    } finally {
+      btnShareBook.innerHTML = originalText;
+      btnShareBook.disabled = false;
+    }
   });
 
   // 13. Web Speech TTS 음성 제어
@@ -1522,43 +1627,141 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 16. 공유 링크 유입 처리 모듈 (load_share 대응)
-  function checkSharedLink() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const loadShare = urlParams.get("load_share");
-    const dest = urlParams.get("dest");
-    const title = urlParams.get("title");
-    const style = urlParams.get("style") || "cherry";
-    const duration = urlParams.get("duration") || "당일치기";
-    const themesStr = urlParams.get("themes") || "";
-    const themes = themesStr ? themesStr.split(",") : [];
-    
-    if (loadShare === "true" && dest) {
-      // 1. 내 보관함 캐시(my_travel_library)에 똑같은 책이 이미 존재하면 재생성하지 않고 즉시 연다.
-      const storageKey = "my_travel_library";
-      const library = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      const foundBook = library.find(b => b.destination === dest && b.title === title);
+  // ==========================================================================
+  // URL 데이터 압축 및 복원 헬퍼 유틸리티 (서버리스 0초 공유 실현)
+  // ==========================================================================
+  
+  // JSON -> Gzip 압축 -> URL-Safe Base64 인코딩
+  async function compressBookData(bookData) {
+    try {
+      const jsonString = JSON.stringify(bookData);
+      const byteToCompress = new TextEncoder().encode(jsonString);
+      const stream = new Response(byteToCompress).body.pipeThrough(new CompressionStream("deflate"));
+      const compressedBlob = await new Response(stream).blob();
       
-      if (foundBook) {
-        activeBookData = foundBook;
-        creationCard.style.display = "none";
-        bookshelfWrapper.style.display = "none";
-        buildEbook(foundBook);
-        // URL 클린업
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return;
-      }
-
-      // 2. 보관함에 없으면 로딩창 띄우고 즉시 재생성 API 호출
-      creationCard.style.display = "none";
-      bookshelfWrapper.style.display = "none";
-      loadingContainer.style.display = "flex";
-      startLoadingMessages();
-
-      generateSharedBook(dest, style, duration, themes);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64UrlSafe = reader.result.split(',')[1]
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+          resolve(base64UrlSafe);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(compressedBlob);
+      });
+    } catch (e) {
+      console.warn("Compression Stream not supported or failed. Fallback to basic Base64 encoding.", e);
+      const jsonString = JSON.stringify(bookData);
+      return btoa(unescape(encodeURIComponent(jsonString)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
     }
   }
 
-  // 페이지 시작 시 공유 링크 체크
+  // URL-Safe Base64 -> Gzip 압축 해제 -> JSON 파싱
+  async function decompressBookData(base64UrlSafe) {
+    try {
+      let base64 = base64UrlSafe.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4) {
+        base64 += '=';
+      }
+      
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const compressedBlob = new Blob([byteArray]);
+      
+      const stream = compressedBlob.stream().pipeThrough(new DecompressionStream("deflate"));
+      const decompressedBuffer = await new Response(stream).arrayBuffer();
+      const jsonString = new TextDecoder().decode(decompressedBuffer);
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.warn("Decompression Stream failed. Fallback to decoding basic Base64.", e);
+      try {
+        let base64 = base64UrlSafe.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        const jsonString = decodeURIComponent(escape(atob(base64)));
+        return JSON.parse(jsonString);
+      } catch (fallbackErr) {
+        throw new Error("도서 공유 데이터 해제 실패: " + fallbackErr.message);
+      }
+    }
+  }
+
+  // 16. 공유 링크 유입 처리 모듈 (load_share 대응 및 book_data 압축 해제 처리)
+  async function checkSharedLink() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loadShare = urlParams.get("load_share");
+    const bookDataParam = urlParams.get("book_data");
+    const dest = urlParams.get("dest");
+    const title = urlParams.get("title");
+    
+    if (loadShare === "true") {
+      // URL 지저분한 파라미터 클린업 (뒤로가기 시 복원 방지 및 주소창 정리)
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+
+      // UI 로딩 상태로 즉시 돌입
+      creationCard.style.display = "none";
+      bookshelfWrapper.style.display = "none";
+      loadingContainer.style.display = "flex";
+      loadingMessage.textContent = "공유받은 도서를 서재에서 꺼내는 중... 📖";
+
+      // 1순위: 압축된 book_data가 쿼리에 실려온 경우 ➡️ 0초 만에 압축 해제 후 다이렉트 뷰 (서버리스 최적화)
+      if (bookDataParam) {
+        try {
+          const decompressedBook = await decompressBookData(bookDataParam);
+          activeBookData = decompressedBook;
+          
+          // 내 보관함에도 자동으로 끼워 넣어줌
+          saveToCabinet(decompressedBook, decompressedBook.style || "cherry", decompressedBook.duration || "당일치기");
+          
+          setTimeout(() => {
+            loadingContainer.style.display = "none";
+            buildEbook(decompressedBook);
+          }, 600);
+          return;
+        } catch (err) {
+          console.error("Failed to restore shared book from compressed URL parameter. Fallback to regeneration:", err);
+        }
+      }
+
+      // 2순위 폴백: 압축 데이터가 유실되었거나 구버전 공유 링크인 경우 ➡️ 캐시 룩업 또는 백엔드 재생성 호출
+      if (dest) {
+        const storageKey = "my_travel_library";
+        const library = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        const foundBook = library.find(b => b.destination === dest && b.title === title);
+        
+        if (foundBook) {
+          activeBookData = foundBook;
+          loadingContainer.style.display = "none";
+          buildEbook(foundBook);
+          return;
+        }
+
+        const style = urlParams.get("style") || "cherry";
+        const duration = urlParams.get("duration") || "당일치기";
+        const themesStr = urlParams.get("themes") || "";
+        const themes = themesStr ? themesStr.split(",") : [];
+
+        startLoadingMessages(dest, "generate");
+        generateSharedBook(dest, style, duration, themes);
+      } else {
+        loadingContainer.style.display = "none";
+        creationCard.style.display = "block";
+        showError("도서 정보 부족", "공유받은 도서의 키워드 정보가 올바르지 않습니다.");
+      }
+    }
+  }
+
+  // 페이지 기동 시 즉각 공유 여부 확인
   checkSharedLink();
 });
