@@ -370,34 +370,35 @@ main {
   gap: 0.5rem;
 }
 
-.option-btn {
+.choice-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.55rem 1.1rem;
   border-radius: 30px;
   border: 1px solid rgba(62, 64, 63, 0.15);
-  background: var(--color-card-bg);
+  background: var(--color-card-bg) !important;
+  color: var(--text-charcoal) !important;
   cursor: pointer;
   font-size: 0.85rem;
   transition: var(--transition-smooth);
   user-select: none;
 }
 
-.option-btn:hover {
+.choice-btn:hover {
   border-color: var(--color-primary);
-  background-color: rgba(138, 163, 153, 0.05);
+  background-color: rgba(138, 163, 153, 0.05) !important;
 }
 
 .radio-group input, .checkbox-group input {
   display: none;
 }
 
-.radio-group input:checked + .option-btn,
-.checkbox-group input:checked + .option-btn {
-  background-color: var(--color-primary);
-  color: #FFFFFF;
-  border-color: var(--color-primary);
+.radio-group input:checked + .choice-btn,
+.checkbox-group input:checked + .choice-btn {
+  background-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+  border-color: var(--color-primary) !important;
   font-weight: 600;
 }
 
@@ -421,6 +422,30 @@ main {
 
 .btn-submit:hover {
   background-color: #798E85;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-paper);
+}
+
+.btn-back-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.3rem;
+  border-radius: 20px;
+  border: 1px solid var(--color-primary);
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-flat);
+  transition: var(--transition-smooth);
+}
+
+.btn-back-home:hover {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-paper);
 }
@@ -1262,11 +1287,43 @@ main {
 /* 모바일 */
 @media (max-width: 768px) {
   header {
-    padding: 1.5rem 1rem 0.5rem 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem 1rem 0.75rem 1rem;
+    text-align: center;
+  }
+  
+  .btn-cabinet {
+    width: 100%;
+    text-align: center;
   }
   
   main {
-    padding: 0 1rem 2rem 1rem;
+    padding: 0 0.75rem 2rem 0.75rem;
+  }
+
+  /* 오디오 컨트롤바 레이아웃 모바일 보완 */
+  .audio-card {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem !important;
+  }
+  
+  .audio-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+
+  .audio-controls .divider {
+    display: none; /* 모바일에서 수직 구분선 숨김 */
+  }
+
+  .btn-download, .btn-share {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.78rem;
+    background-color: rgba(138, 163, 153, 0.08);
   }
   
   .creation-card {
@@ -1345,7 +1402,7 @@ main {
     padding: 1.25rem;
   }
   
-  .option-btn {
+  .choice-btn {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
   }
@@ -1363,9 +1420,10 @@ h1, h2, h3, .cover-main-title {
   font-family: var(--font-serif);
 }
 
-.option-btn, .btn-submit, .btn-rotate-shelf, .btn-cabinet {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
+.btn-back-home, .btn-submit, .btn-rotate-shelf, .btn-cabinet {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
 }
 
 .btn-submit:hover, .btn-rotate-shelf:hover, .btn-cabinet:hover {

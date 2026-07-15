@@ -574,10 +574,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       });
 
-      // Left Page: 감성 아날로그 엽서 지도 (0초 로드, 실제 위경도 SVG 매핑 및 빈티지 스크랩북 콜라주 데코)
-      const bgImgUrl = data.pages[dayPlan.day - 1]?.imageUrl || data.pages[0]?.imageUrl || "";
-      const stampImgUrl = data.pages[(dayPlan.day) % data.pages.length]?.imageUrl || data.pages[0]?.imageUrl || "";
-
+      // Left Page: 감성 아날로그 엽서 지도 (백엔드 미리 병렬 생성으로 0초 만에 로딩 완료)
       tempPages.push({
         type: "visual itinerary-map-panel",
         html: `
@@ -588,40 +585,11 @@ document.addEventListener("DOMContentLoaded", () => {
               <button class="map-tab-btn" data-target="interactive-day-${dayPlan.day}" data-day="${dayPlan.day}">🗺️ 실시간 약도</button>
             </div>
             
-            <!-- 탭 1: 아날로그 감성 엽서 지도 (서버 통신 없이 0초 만에 렌더링) -->
-            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; flex: 1; position: relative; overflow: hidden;">
-              <!-- 엽서 배경 래퍼 (Unsplash 풍경 은은하게 합성) -->
-              <div class="postcard-bg-wrap" style="background-image: url('${bgImgUrl}');"></div>
-              
-              <!-- 아날로그 모눈 격자 오버레이 -->
-              <div class="postcard-grid-overlay"></div>
-              
-              <!-- 스크랩북 빈티지 콜라주 데코레이션 -->
-              <div class="postcard-scrapbook-overlay">
-                <!-- 마스킹 테이프 -->
-                <div class="masking-tape"></div>
-                
-                <!-- 빈티지 우표 및 포스트마크 -->
-                <div class="vintage-stamp">
-                  <div class="stamp-inner" style="background-image: url('${stampImgUrl}');">
-                    <span class="stamp-price">2026</span>
-                  </div>
-                  <div class="postmark-circle">${data.destination.substring(0, 8).toUpperCase()}</div>
-                </div>
-                
-                <!-- 엽서 손글씨 타이포그래피 (Nanum Pen Script 적용) -->
-                <div class="postcard-handwriting">
-                  <div class="hand-title">${data.destination}</div>
-                  <div class="hand-subtitle">Day ${dayPlan.day} 여정</div>
-                </div>
-              </div>
-
-              <!-- 빈티지 경로 SVG 일러스트 오버레이 (실제 위경도 100% 반영) -->
-              ${generateSvgRouteMap(dayPlan.timeline, data.destination)}
-              
+            <!-- 탭 1: 아날로그 감성 엽서 지도 (아름다운 2도 인쇄 화풍 엽서 적용) -->
+            <div class="map-tab-content postcard-day-${dayPlan.day} active-tab" style="width: 100%; height: 100%; flex: 1; position: relative; overflow: hidden; background-image: url('${dayPlan.mapImageUrl}'); background-size: cover; background-position: center;">
               <div class="map-panel-title-overlay">
                 <span>Day ${dayPlan.day} 추천 경로</span>
-                <button class="postcard-download-btn" data-url="${bgImgUrl}" data-filename="${data.destination}_Day${dayPlan.day}_Bg.jpg" title="엽서 배경 사진 다운로드">💾 풍경 저장</button>
+                <button class="postcard-download-btn" data-url="${dayPlan.mapImageUrl}" data-filename="${data.destination}_Day${dayPlan.day}_MapCard.jpg" title="엽서 지도 다운로드">💾 엽서 저장</button>
               </div>
             </div>
             

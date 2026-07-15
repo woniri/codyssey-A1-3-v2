@@ -450,6 +450,40 @@ async def search_destination(req: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"서재 구성 중 서버 오류 발생: {str(e)}")
 
+def generate_map_postcard_prompt(destination: str, day: int, timeline: list) -> str:
+    places = [item.get("place", "") for item in timeline if item.get("place")][:4]
+    places_str = ", ".join(places)
+    
+    prompt = f"""
+[Purpose]
+Make a vintage travel map postcard for '{destination}' Day {day} featuring local landmarks and route in two-color print.
+
+[Scene]
+A warm, analog travel mood card for '{destination}'. Cream-colored vintage paper base with simple hand-drawn route paths, tiny landmark icons, postage stamp, round postmark, and handwritten notes. The entire design feels like a cozy souvenir postcard with risograph or silkscreen printing style using only two contrasting ink colors (deep navy and sunset orange).
+
+[Main Subject]
+The travel map postcard card itself. The title '{destination} Map' is written on top, and places ({places_str}) are illustrated with small, cute linear icons like street stalls, local houses, riverside, or landmarks.
+
+[Style]
+Vintage travel stamp and postcard graphic design. Hand-drawn imperfect lines, slight print misalignments, ink bleeding textures, and vintage paper grains. Flat scanned or flat lay top-down view of a real paper card.
+
+[Composition]
+A landscape 3:2 card positioned at the center with a slight tilt angle. Title in Korean on top, route lines connecting places in the middle, and a short memory diary sentence in Korean at the bottom. A postage stamp box and round stamp are layered on the top right, scale bar on the bottom left. Ample margins around the card.
+
+[Lighting]
+Soft diffused indoor warm light casting soft paper edge shadows. Matte ink texture without gloss.
+
+[Text]
+Clearly rendered Korean and English texts:
+- Main title on top: '{destination}'
+- Subtitle: 'Day {day} 여정 지도'
+- Landmark labels: {', '.join([f"'{p}'" for p in places])}
+- Stamp text: '{destination.upper()[:8]} MAP'
+- Postmark date: '2026.02.14'
+- Bottom note: '망고 향과 불빛이 남은 밤' or a short warm memory diary sentence about '{destination}' in Korean.
+"""
+    return prompt.strip()
+
 # 2. 선택된 명소의 상세 스토리 및 추천 일정 생성 API
 @app.post("/api/generate")
 async def generate_travel_book(req: GenerateBookRequest):
@@ -556,16 +590,43 @@ async def generate_travel_book(req: GenerateBookRequest):
         # 3. JSON 데이터 파싱 (마크다운 클렌징 처리)
         result_data = json.loads(clean_json_text(response_text))
 
-        # 4. Unsplash 실제 풍경 이미지 매칭 연동 (병렬화 처리로 대기 시간 최소화)
+        # 4. Unsplash 실제 풍경 이미지 매칭 및 엽서 지도 병렬 트리거 연동 (대기 시간 최소화)
         from concurrent.futures import ThreadPoolExecutor
         pages = result_data.get("pages", [])
+        itinerary = result_data.get("itinerary", [])
         
         def fetch_and_set_image(page):
             query = page.get("imageSearchQuery", destination)
             page["imageUrl"] = get_unsplash_image(query)
             
-        with ThreadPoolExecutor(max_workers=min(len(pages), 6)) as executor:
-            list(executor.map(fetch_and_set_image, pages)) # 모든 병렬 작업 완료 강제 대기
+        def fetch_and_set_map_image(day_plan):
+            day = day_plan.get("day", 1)
+            timeline = day_plan.get("timeline", [])
+            
+            # 동적 엽서 지도 프롬프트 생성
+            prompt = generate_map_postcard_prompt(destination, day, timeline)
+            map_url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt)}?width=1024&height=768&nologo=true"
+            
+            # Pollinations AI 이미지 로딩 지연 극복을 위해 백엔드에서 미리 비동기 GET 요청 전송 (생성 자극)
+            try:
+                requests.get(map_url, timeout=3)
+            except Exception:
+                pass
+                
+            day_plan["mapImageUrl"] = map_url
+
+        tasks = []
+        with ThreadPoolExecutor(max_workers=min(len(pages) + len(itinerary), 10)) as executor:
+            for p in pages:
+                tasks.append(executor.submit(fetch_and_set_image, p))
+            for day_plan in itinerary:
+                tasks.append(executor.submit(fetch_and_set_map_image, day_plan))
+            
+            for t in tasks:
+                try:
+                    t.result()
+                except Exception:
+                    pass
 
         return result_data
 
