@@ -868,12 +868,14 @@ main {
 
 /* 추천 일정 */
 .itinerary-panel {
-  padding: 2.25rem;
+  padding: 0 !important; /* 바깥 page-content 패딩 중복 방지 */
   overflow-y: auto;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
   justify-content: flex-start !important;
+  align-items: stretch !important;
 }
 
 .itinerary-panel h3 {

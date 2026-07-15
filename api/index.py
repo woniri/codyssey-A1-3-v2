@@ -454,33 +454,26 @@ def generate_map_postcard_prompt(destination: str, day: int, timeline: list) -> 
     places = [item.get("place", "") for item in timeline if item.get("place")][:4]
     places_str = ", ".join(places)
     
+    # 엽서의 무드와 일치하는 짧은 한글 한 줄 메모 생성
+    note_memo = f"{destination}의 골목, 따뜻한 밤 불빛 아래서"
+    if "방콕" in destination or "Bangkok" in destination:
+        note_memo = "망고 향과 불빛이 남은 밤"
+    elif "서울" in destination:
+        note_memo = "기와 지붕 위로 흐르는 달빛 아래"
+    elif "도쿄" in destination:
+        note_memo = "도심의 따스한 노을과 불빛"
+    
     prompt = f"""
-[Purpose]
-Make a vintage travel map postcard for '{destination}' Day {day} featuring local landmarks and route in two-color print.
-
-[Scene]
-A warm, analog travel mood card for '{destination}'. Cream-colored vintage paper base with simple hand-drawn route paths, tiny landmark icons, postage stamp, round postmark, and handwritten notes. The entire design feels like a cozy souvenir postcard with risograph or silkscreen printing style using only two contrasting ink colors (deep navy and sunset orange).
-
-[Main Subject]
-The travel map postcard card itself. The title '{destination} Map' is written on top, and places ({places_str}) are illustrated with small, cute linear icons like street stalls, local houses, riverside, or landmarks.
-
-[Style]
-Vintage travel stamp and postcard graphic design. Hand-drawn imperfect lines, slight print misalignments, ink bleeding textures, and vintage paper grains. Flat scanned or flat lay top-down view of a real paper card.
-
-[Composition]
-A landscape 3:2 card positioned at the center with a slight tilt angle. Title in Korean on top, route lines connecting places in the middle, and a short memory diary sentence in Korean at the bottom. A postage stamp box and round stamp are layered on the top right, scale bar on the bottom left. Ample margins around the card.
-
-[Lighting]
-Soft diffused indoor warm light casting soft paper edge shadows. Matte ink texture without gloss.
-
-[Text]
-Clearly rendered Korean and English texts:
-- Main title on top: '{destination}'
-- Subtitle: 'Day {day} 여정 지도'
-- Landmark labels: {', '.join([f"'{p}'" for p in places])}
-- Stamp text: '{destination.upper()[:8]} MAP'
-- Postmark date: '2026.02.14'
-- Bottom note: '망고 향과 불빛이 남은 밤' or a short warm memory diary sentence about '{destination}' in Korean.
+A beautiful analog travel map postcard card of '{destination}' Day {day}.
+Two-color ink print (deep navy blue and sunset orange only) in risograph and silk screen printing style.
+Slightly misaligned print layers, hand-drawn imperfect sketch lines, and warm matte cream paper card texture.
+The card shows a minimalist route map of '{destination}' connecting timeline places ({places_str}) with simple orange dashed paths and cute small linear hand-drawn icons.
+Top has a large title in Korean: "{destination}".
+Subtitle: "Day {day} 추천 여정".
+Small labels in Korean next to icons: {', '.join([f'"{p}"' for p in places])}.
+Top right has a postage stamp box, and a circular travel postmark stamp of "2026.02.14".
+Bottom has a handwritten diary note in Korean: "{note_memo}".
+Flat scanned composition, soft indoor diffused lighting with light paper shadows on the margins. High fidelity text rendering.
 """
     return prompt.strip()
 
@@ -605,7 +598,7 @@ async def generate_travel_book(req: GenerateBookRequest):
             
             # 동적 엽서 지도 프롬프트 생성
             prompt = generate_map_postcard_prompt(destination, day, timeline)
-            map_url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt)}?width=1024&height=768&nologo=true"
+            map_url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt)}?width=1024&height=768&nologo=true&model=flux"
             
             # Pollinations AI 이미지 로딩 지연 극복을 위해 백엔드에서 미리 비동기 GET 요청 전송 (생성 자극)
             try:

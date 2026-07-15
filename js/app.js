@@ -605,10 +605,12 @@ document.addEventListener("DOMContentLoaded", () => {
       tempPages.push({
         type: "itinerary",
         html: `
-          <div class="page-content itinerary-panel">
-            <h3>📅 추천 일정: Day ${dayPlan.day}</h3>
-            <div class="timeline">
-              ${timelineHtml}
+          <div class="page-content" style="justify-content: flex-start !important; padding: 2.25rem !important;">
+            <div class="itinerary-panel" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start;">
+              <h3>📅 추천 일정: Day ${dayPlan.day}</h3>
+              <div class="timeline">
+                ${timelineHtml}
+              </div>
             </div>
           </div>
         `
