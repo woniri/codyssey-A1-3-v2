@@ -48,11 +48,11 @@ async def share_page(title: str = "think-travel", subtitle: str = "문학 여행
   <meta name="twitter:description" content="{subtitle}">
   <meta name="twitter:image" content="{img}">
   
-  <!-- 메인 웹 서비스로 리다이렉트 (사용자 유입 시 모든 공유 매개변수 전송) -->
+  <!-- 메인 웹 서비스로 리다이렉트 (사용자 유입 시 모든 공유 매개변수 및 데이터 해시 전송) -->
   <script>
     const params = new URLSearchParams(window.location.search);
     params.set("load_share", "true");
-    window.location.href = "/?" + params.toString();
+    window.location.href = "/?" + params.toString() + window.location.hash;
   </script>
 </head>
 <body>
@@ -487,7 +487,7 @@ async def generate_travel_book(req: GenerateBookRequest):
 - 주요 관심 테마: {theme_str}
 
 [스토리텔링 제약 규칙]
-- 책 본문(pages)은 반드시 총 4페이지로 구성합니다. 각 페이지는 역사적 전설, 숨겨진 비화, 문화적 배경 등 깊이 있는 정보를 제공하되 백과사전식 나열이 아닌 선택된 작가의 문체 특징을 고스란히 살려 시적이고 세련된 스토리로 채워주세요.
+- 책 본문(pages)의 개수는 반드시 정확하게 4페이지(배열 내 객체 딱 4개)로 제한합니다. 5페이지를 생성하거나 3페이지 이하로 만들지 마십시오. 각 페이지는 역사적 전설, 숨겨진 비화, 문화적 배경 등 깊이 있는 정보를 제공하되 백과사전식 나열이 아닌 선택된 작가의 문체 특징을 고스란히 살려 시적이고 세련된 스토리로 채워주세요.
 - 각 페이지당 storyText는 한국어 기준 200~300자 내외입니다.
 - audioText는 낭독용입니다. 특수문자, 이모지, 괄호를 제외하고 한국어로 물 흐르듯 자연스럽게 낭독되도록 정돈해 주세요.
 - 표지용 일러스트 프롬프트는 따뜻하고 감성적인 플랫 벡터 여행 포스터 일러스트(flat vector cozy travel poster illustration, minimal line art style, warm pastel color palette with cream, terracotta and light blue, aesthetic composition, highly detailed, no text) 스타일로 영어로 작성해 주세요.
@@ -543,7 +543,7 @@ async def generate_travel_book(req: GenerateBookRequest):
 }}
 """
 
-    system_instruction = f"당신은 가이드북을 출판하는 AI 사서입니다. 도서의 모든 제목(title), 소제목(subtitle), 챕터 제목(chapterTitle), 본문(storyText), 낭독 스크립트(audioText), 일정 해설(desc) 등 모든 텍스트 결과물은 반드시 선택된 작가의 문체인 '{style_instruction}'를 기반으로 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어 단어(예: heart, finds, travel, place, route, trip, metrics, details 등)나 영문 철자를 텍스트에 섞지 마십시오. 오직 순수한 한글 단어만 사용해 주세요. (단, 이미지 프롬프트나 이미지 검색용 키워드인 coverImagePrompt, mapImagePrompt, imageSearchQuery 등 영문 지침이 있는 특정 프로퍼티 제외)"
+    system_instruction = f"당신은 가이드북을 출판하는 AI 사서입니다. 도서의 모든 제목(title), 소제목(subtitle), 챕터 제목(chapterTitle), 본문(storyText), 낭독 스크립트(audioText), 일정 내 방문지명(place), 일정 해설(desc) 등 생성되는 모든 텍스트 결과물은 반드시 선택된 작가의 문체인 '{style_instruction}'를 기반으로 가독성 좋은 아름다운 한국어(Korean)로만 출력해야 합니다. 어떠한 경우에도 영어 단어(예: heart, finds, travel, place, route, trip, metrics, details 등)나 영문 철자를 텍스트에 섞지 마십시오. 방문지명도 영어 명칭 대신 '시부야 스카이', '도쿄 타워'와 같이 100% 한글 음차 또는 한국어 번역으로만 표기해 주세요. 오직 순수한 한글 단어만 사용해 주세요. (단, 이미지 프롬프트나 이미지 검색용 키워드인 coverImagePrompt, mapImagePrompt, imageSearchQuery 등 영문 지침이 있는 특정 프로퍼티 제외)"
 
     try:
         # 2. Fallback 로테이션 호출

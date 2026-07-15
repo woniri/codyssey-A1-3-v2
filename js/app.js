@@ -489,8 +489,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="visual-panel cover-half-right-panel" style="padding: 0; background-image: url('${coverImageUrl}');">
           <!-- 커버 타이틀 (오른쪽 데코) -->
           <div class="cover-text-right">
-            <div class="cover-author-tag">Written by AI</div>
-            <div class="cover-year-tag">${new Date().getFullYear()}</div>
+            <div class="cover-author-tag">AI가 엮음</div>
+            <div class="cover-year-tag">${new Date().getFullYear()}년</div>
           </div>
         </div>
       `
@@ -514,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <img class="scrapbook-photo" src="${p.imageUrl}" alt="${p.chapterTitle}" loading="lazy" decoding="async">
               <div class="photo-caption">${p.chapterTitle}</div>
             </div>
-            <div class="visual-credits">Photo matching via Unsplash</div>
+            <div class="visual-credits">사진 출처: Unsplash</div>
           </div>
         `
       });
@@ -534,8 +534,8 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="story-body">${p.storyText}</div>
             </div>
             <div class="story-footer">
-              <span>think-travel 📖</span>
-              <span>Page ${idx + 1}</span>
+              <span>여행 책방 📖</span>
+              <span>${idx + 1}쪽</span>
             </div>
           </div>
         `
@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ${generateSvgRouteMap(dayPlan.timeline, data.destination)}
               
               <div class="map-panel-title-overlay">
-                <span>Day ${dayPlan.day} Route Map</span>
+                <span>Day ${dayPlan.day} 추천 경로</span>
                 <button class="postcard-download-btn" data-url="${bgImgUrl}" data-filename="${data.destination}_Day${dayPlan.day}_Bg.jpg" title="엽서 배경 사진 다운로드">💾 풍경 저장</button>
               </div>
             </div>
@@ -1118,8 +1118,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const coverPrompt = activeBookData.coverImagePrompt || `${activeBookData.destination} cozy flat vector travel poster illustration`;
       const coverImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(coverPrompt)}?width=1024&height=768&nologo=true`;
       
-      // book_data 파라미터에 압축 스트링을 붙여 공유 링크 생성
-      const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}&book_data=${compressedData}`;
+      // book_data 파라미터를 해시(#)에 붙여 공유 링크 생성 (URL 파라미터 길이 한계 극복 및 414 방지)
+      const shareUrl = `${window.location.origin}/api/share?title=${encodeURIComponent(activeBookData.title)}&subtitle=${encodeURIComponent(activeBookData.subtitle)}&img=${encodeURIComponent(coverImageUrl)}&dest=${encodeURIComponent(activeBookData.destination)}#${compressedData}`;
       
       navigator.clipboard.writeText(shareUrl).then(() => {
         showError("📖 공유 링크 복사 완료", "나만의 감성 가이드북 공유 링크가 복사되었습니다!<br>카카오톡이나 SNS에 공유하면 친구가 똑같은 책을 즉시 펼쳐볼 수 있습니다.", "🔗");
@@ -1696,16 +1696,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 16. 공유 링크 유입 처리 모듈 (load_share 대응 및 book_data 압축 해제 처리)
+  // 16. 공유 링크 유입 처리 모듈 (load_share 대응 및 book_data 해시 압축 해제 처리)
   async function checkSharedLink() {
     const urlParams = new URLSearchParams(window.location.search);
     const loadShare = urlParams.get("load_share");
-    const bookDataParam = urlParams.get("book_data");
+    const bookDataHash = window.location.hash.substring(1); // #을 뺀 해시 압축 데이터 가져오기
     const dest = urlParams.get("dest");
     const title = urlParams.get("title");
     
     if (loadShare === "true") {
-      // URL 지저분한 파라미터 클린업 (뒤로가기 시 복원 방지 및 주소창 정리)
+      // URL 지저분한 파라미터 및 해시 클린업 (뒤로가기 시 복원 방지 및 주소창 정리)
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
 
@@ -1715,10 +1715,10 @@ document.addEventListener("DOMContentLoaded", () => {
       loadingContainer.style.display = "flex";
       loadingMessage.textContent = "공유받은 도서를 서재에서 꺼내는 중... 📖";
 
-      // 1순위: 압축된 book_data가 쿼리에 실려온 경우 ➡️ 0초 만에 압축 해제 후 다이렉트 뷰 (서버리스 최적화)
-      if (bookDataParam) {
+      // 1순위: 해시(#)로 압축된 book_data가 실려온 경우 ➡️ 0초 만에 압축 해제 후 다이렉트 뷰 (서버리스 최적화)
+      if (bookDataHash) {
         try {
-          const decompressedBook = await decompressBookData(bookDataParam);
+          const decompressedBook = await decompressBookData(bookDataHash);
           activeBookData = decompressedBook;
           
           // 내 보관함에도 자동으로 끼워 넣어줌
@@ -1730,7 +1730,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }, 600);
           return;
         } catch (err) {
-          console.error("Failed to restore shared book from compressed URL parameter. Fallback to regeneration:", err);
+          console.error("Failed to restore shared book from compressed URL hash parameter. Fallback to regeneration:", err);
         }
       }
 
